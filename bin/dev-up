@@ -5,5 +5,5 @@ PROJECT_DIR="$(dirname $script_root_dir)"
 
 source "$script_root_dir/utils/docker.sh"
 
-$docker_command -f "$PROJECT_DIR/docker-compose.yml" -p nextjs-template --project-directory $PROJECT_DIR down
-$docker_command -f "$PROJECT_DIR/docker-compose.yml" -p nextjs-template --project-directory $PROJECT_DIR up
+$docker_command -f "$PROJECT_DIR/docker-compose.yml" -p animeeting --project-directory $PROJECT_DIR down
+$docker_command -f "$PROJECT_DIR/docker-compose.yml" -p animeeting --project-directory $PROJECT_DIR up

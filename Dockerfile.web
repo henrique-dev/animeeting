@@ -1,5 +1,5 @@
 # Dockerfile development version
-FROM node:20.3.1-alpine AS nextjs-template
+FROM node:20.3.1-alpine AS animeeting
 
 RUN apk -U upgrade && apk add --no-cache curl git
 
