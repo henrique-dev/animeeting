@@ -35,7 +35,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   return (
     <ThemeProvider>
       <CustomDocument locale={locale}>
-        <body className={twJoin(geistSans.variable, geistMono.variable, 'h-full bg-gray-900 antialiased')}>
+        <body className={twJoin(geistSans.variable, geistMono.variable, 'h-full bg-white antialiased')}>
           <NextIntlClientProvider timeZone={timezone} locale={locale} messages={messages}>
             <Layout>{children}</Layout>
           </NextIntlClientProvider>

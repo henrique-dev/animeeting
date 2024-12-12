@@ -2,4 +2,10 @@
 
 import { io } from 'socket.io-client';
 
-export const socket = io();
+export const socketUserId = crypto.randomUUID();
+
+export const socket = io({
+  auth: {
+    userId: socketUserId,
+  },
+});
