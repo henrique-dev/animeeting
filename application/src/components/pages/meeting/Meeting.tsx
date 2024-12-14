@@ -1,5 +1,6 @@
 import { twJoin } from 'tailwind-merge';
 import { Chat } from './Chat';
+import { LinkCopy } from './LinkCopy';
 import { MeetingBar } from './MeetingBar';
 import { ModalEnterName } from './ModalEnterName';
 import { ModalRequireMedia } from './ModalRequireMedia';
@@ -26,7 +27,7 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
 
   return (
     <div className="flex h-full w-full flex-col bg-zinc-800">
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         <div
           className={twJoin(
             'relative max-h-screen flex-1 items-center justify-center',
@@ -47,9 +48,10 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
         </div>
         <Chat sendChatData={sendChatData} />
       </div>
-      <MeetingBar />
+      <LinkCopy />
       <ModalEnterName isOpen={isModalAlertNameOpen} />
       <ModalRequireMedia isOpen={isModalRequireCameraNameOpen} />
+      <MeetingBar />
     </div>
   );
 };

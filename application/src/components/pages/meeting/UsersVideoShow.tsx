@@ -16,10 +16,10 @@ export const UsersVideoShow = ({ localVideoElementRefHandler, users, remoteVideo
 
   return (
     <>
-      <div className="absolute right-0 top-0 z-10 flex w-full justify-end p-4">
+      <div className="absolute bottom-0 right-0 z-10 flex w-full justify-end p-4 sm:bottom-auto sm:top-0">
         <div className="overflow-hidden rounded-lg bg-zinc-700 p-1">
           <div className="overflow-hidden rounded-md">
-            <video ref={localVideoElementRefHandler} width={200} autoPlay playsInline />
+            <video ref={localVideoElementRefHandler} autoPlay playsInline className="w-32 sm:w-48" />
           </div>
         </div>
       </div>

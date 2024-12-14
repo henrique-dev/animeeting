@@ -47,6 +47,7 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
   }, []);
 
   const onUserLeave = useCallback((user: UserType) => {
+    console.log('USER LEAVE', user);
     userConnectionsMapRef.current.delete(user.id);
 
     setCurrentUsers((oldUsers) => oldUsers.filter((oldUser) => oldUser.id !== user.id));
@@ -56,6 +57,8 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
     (users: UserType[]) => {
       users.forEach((user) => {
         if (user.id === socketUserId || userConnectionsMapRef.current.has(user.id)) return;
+
+        console.log('USER ENTER');
 
         const localeStream = localStreamRef.current;
         const peerConnection = new RTCPeerConnection(peerConfiguration);

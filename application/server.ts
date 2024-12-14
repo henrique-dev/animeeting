@@ -19,6 +19,7 @@ type PairType = {
 };
 
 type MeetingType = {
+  roomId: string;
   connectionPairs: Map<string, Map<string, PairType>>;
   users: Map<
     string,
@@ -45,7 +46,10 @@ app.prepare().then(() => {
 
   const getMeeting = (meetingId: string) => {
     if (!meetings.has(meetingId)) {
+      console.log('CREATING A NEW ROOM');
+
       meetings.set(meetingId, {
+        roomId: `meeting_${meetingId}`,
         users: new Map(),
         connectionPairs: new Map(),
       });
@@ -95,15 +99,15 @@ app.prepare().then(() => {
 
       if (!meeting) return;
 
+      socket.join(meeting.roomId);
+
       meeting.users.set(userId, {
         id: userId,
         name: userName,
         socketId: socket.id,
       });
 
-      meeting.users.forEach((user) => {
-        io.to(user.socketId).emit('user-enter', { users: Array.from(meeting.users.values()) });
-      });
+      io.to(meeting.roomId).emit('user-enter', { users: Array.from(meeting.users.values()) });
     });
 
     socket.on('decide-offer-answer', (data) => {
@@ -239,7 +243,7 @@ app.prepare().then(() => {
     });
 
     socket.on('disconnect', () => {
-      for (const meeting of meetings.values()) {
+      meetings.forEach((meeting) => {
         if (meeting.users.has(userId)) {
           const connectionPairs = meeting.connectionPairs;
 
@@ -250,13 +254,12 @@ app.prepare().then(() => {
           for (const connectionPair of connectionPairs.values()) {
             connectionPair.delete(userId);
           }
+
+          io.to(meeting.roomId).emit('user-leave', { user: { id: userId } });
         }
-        meeting.users.forEach((user) => {
-          io.to(user.socketId).emit('user-leave', { user: { id: userId } });
-        });
 
         meeting.users.delete(userId);
-      }
+      });
     });
   });
 

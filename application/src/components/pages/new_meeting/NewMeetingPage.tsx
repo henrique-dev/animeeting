@@ -11,20 +11,20 @@ export const NewMeetingPage = () => {
   const disableSubmit = name.trim() === '' || !mediaAllowed;
 
   return (
-    <div className="flex h-full w-full items-center justify-center">
-      <div className="flex max-w-96 flex-col items-center justify-center space-y-4">
+    <div className="flex h-full w-full items-center justify-center p-2">
+      <div className="flex w-full max-w-96 flex-col items-center justify-center space-y-4">
         {mediaAllowed === null && (
-          <div className="flex h-64 w-96 items-center justify-center rounded-lg bg-zinc-800">
+          <div className="flex h-64 w-full items-center justify-center rounded-lg bg-zinc-800">
             <Spinner className="h-5 w-5" />
           </div>
         )}
         {mediaAllowed === false && (
-          <div className="flex h-64 w-96 items-center justify-center rounded-lg bg-zinc-800">
+          <div className="flex h-64 w-full items-center justify-center rounded-lg bg-zinc-800">
             <Chip>You need to allow the use of camera</Chip>
           </div>
         )}
         {mediaAllowed && (
-          <div className="w-96 overflow-hidden rounded-lg">
+          <div className="w-full overflow-hidden rounded-lg">
             <video ref={registerVideoRef} autoPlay playsInline />
           </div>
         )}
