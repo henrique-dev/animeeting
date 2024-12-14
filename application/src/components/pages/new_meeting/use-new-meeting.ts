@@ -5,11 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 export const useNewMeeting = () => {
-  const [localStream, setLocalStream] = useState<MediaStream>();
-  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const videoElementRef = useRef<HTMLVideoElement>(null);
+  const mediaStreamRef = useRef<MediaStream>(null);
+  const [mediaAllowed, setMediaAllowed] = useState<boolean | null>(null);
+  const [name, setName] = useState('');
   const router = useRouter();
 
   const createNewMeetingHandler = () => {
+    localStorage.setItem('name', name);
+
     api
       .post('/api/meetings')
       .then(async (response) => {
@@ -18,8 +22,18 @@ export const useNewMeeting = () => {
         router.push(`/meetings/${data.id}`);
       })
       .catch((err) => {
-        console.log(err);
+        console.error(err);
       });
+  };
+
+  const registerVideoRef = (videoElement: HTMLVideoElement | null) => {
+    if (videoElement) {
+      if (!videoElement.srcObject && mediaStreamRef.current) {
+        videoElement.srcObject = mediaStreamRef.current;
+      }
+
+      videoElementRef.current = videoElement;
+    }
   };
 
   useEffect(() => {
@@ -29,20 +43,34 @@ export const useNewMeeting = () => {
         audio: true,
       })
       .then((stream) => {
-        setLocalStream(stream);
-
-        const videoEl = localVideoRef.current;
-
-        if (!videoEl) return;
-
-        if ('srcObject' in videoEl) {
-          videoEl.srcObject = stream;
-        }
+        mediaStreamRef.current = stream;
+        setMediaAllowed(true);
+        setName(localStorage.getItem('name') ?? '');
       })
       .catch((err) => {
-        console.log(err);
+        setMediaAllowed(false);
+        console.warn('cannot get the user media');
+        console.warn(err);
       });
-  }, [setLocalStream]);
 
-  return { localVideoRef, createNewMeetingHandler };
+    return () => {
+      mediaStreamRef.current?.getTracks().forEach((track) => {
+        track.stop();
+      });
+
+      mediaStreamRef.current = null;
+
+      const videoElement = videoElementRef.current;
+
+      if (!videoElement) return;
+
+      const mediaStream = videoElement.srcObject as MediaStream;
+
+      mediaStream?.getTracks().forEach((track) => {
+        track.stop();
+      });
+    };
+  }, [setMediaAllowed]);
+
+  return { mediaAllowed, name, setName, createNewMeetingHandler, registerVideoRef };
 };

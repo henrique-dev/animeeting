@@ -1,155 +1,191 @@
 import { socket } from '@/socket';
-import { useCallback, useEffect, useRef } from 'react';
-
-const peerId = crypto.randomUUID();
-
-const peerConfiguration = {
-  iceServers: [
-    {
-      urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'],
-    },
-  ],
-};
+import { useCallback, useContext, useEffect, useRef } from 'react';
+import { MeetingContext } from './MeetingProvider';
+import { useAlertModal } from './use-alert-modal';
+import { useConnections } from './use-connections';
+import { useMedia } from './use-media';
 
 type UseMeetingProps = {
   meetingId: string;
 };
 
 export const useMeeting = ({ meetingId }: UseMeetingProps) => {
-  const localPeerConnectionRef = useRef<RTCPeerConnection>(null);
+  const videoElementRef = useRef<HTMLVideoElement>(null);
+  const { userName, properties, setProperties, setUserName } = useContext(MeetingContext);
+  const { currentUsers, localStreamRef, userConnectionsMapRef, sendAppData, sendChatData } = useConnections({
+    meetingId,
+  });
+  const localMediaStreamRef = useRef<MediaStream>(null);
+  const isSharingScreenRef = useRef(false);
+  const { getUserMedia, getDisplayMedia } = useMedia();
+  const { isModalAlertNameOpen, isModalRequireCameraNameOpen, setIsModalAlertNameOpen, setIsModalRequireCameraNameOpen } = useAlertModal();
 
-  const localStreamRef = useRef<MediaStream>(null);
-  const remoteStreamRef = useRef<MediaStream>(null);
-
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
-
-  const startMicAndCamera = useCallback(() => {
-    return navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-  }, []);
-
-  const createPeerConnection = useCallback(async (stream: MediaStream) => {
-    const peerConnection = new RTCPeerConnection(peerConfiguration);
-    const remoteStream = new MediaStream();
-
-    stream.getTracks().forEach((track) => {
-      peerConnection.addTrack(track, stream);
-    });
-
-    peerConnection.ontrack = (event) => {
-      event.streams[0].getTracks().forEach((track) => {
-        remoteStream.addTrack(track);
-      });
-    };
-
-    localPeerConnectionRef.current = peerConnection;
-
-    localStreamRef.current = stream;
-    remoteStreamRef.current = remoteStream;
-
-    if (localVideoRef.current && 'srcObject' in localVideoRef.current) {
-      localVideoRef.current.srcObject = localStreamRef.current;
+  const initMeeting = useCallback(() => {
+    if (!userName || userName.trim() === '') {
+      setIsModalAlertNameOpen(true);
+      return;
     }
 
-    if (remoteVideoRef.current && 'srcObject' in remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = remoteStreamRef.current;
-    }
+    setIsModalAlertNameOpen(false);
+    setUserName(userName);
 
-    socket.emit('start-call', { meetingId });
-  }, []);
-
-  const createOffer = useCallback(async () => {
-    console.log('createOffer');
-
-    if (!localPeerConnectionRef.current) return;
-
-    localPeerConnectionRef.current.onicecandidate = (event) => {
-      if (!event.candidate) return;
-
-      socket.emit('offers', { meetingId, candidate: event.candidate });
-    };
-
-    const offer = await localPeerConnectionRef.current.createOffer();
-    await localPeerConnectionRef.current.setLocalDescription(offer);
-
-    socket.emit('offer', { meetingId, offer });
-  }, []);
-
-  const associateAnswer = useCallback((answer: RTCSessionDescriptionInit) => {
-    console.log('associateAnswer');
-
-    if (!localPeerConnectionRef.current) return;
-
-    if (!localPeerConnectionRef.current.currentRemoteDescription && answer) {
-      const answerDescription = new RTCSessionDescription(answer);
-      localPeerConnectionRef.current.setRemoteDescription(answerDescription);
-    }
-  }, []);
-
-  const addCandidate = useCallback((data: RTCIceCandidateInit) => {
-    if (!localPeerConnectionRef.current) return;
-
-    const candidate = new RTCIceCandidate(data);
-    localPeerConnectionRef.current.addIceCandidate(candidate);
-  }, []);
-
-  const createAnswer = useCallback(async (offer: RTCSessionDescriptionInit, offerCandidates: RTCIceCandidateInit[]) => {
-    if (!localPeerConnectionRef.current) return;
-
-    localPeerConnectionRef.current.onicecandidate = (event) => {
-      if (!event.candidate) return;
-
-      socket.emit('answers', { meetingId, candidate: event.candidate });
-    };
-
-    await localPeerConnectionRef.current.setRemoteDescription(offer);
-
-    const answerDescription = await localPeerConnectionRef.current.createAnswer();
-    await localPeerConnectionRef.current.setLocalDescription(answerDescription);
-
-    socket.emit('answer', { meetingId, answer: answerDescription });
-
-    offerCandidates.forEach((offerCandidate) => {
-      localPeerConnectionRef.current?.addIceCandidate(new RTCIceCandidate(offerCandidate));
-    });
-  }, []);
-
-  useEffect(() => {
-    startMicAndCamera()
+    getUserMedia()
       .then((stream) => {
-        createPeerConnection(stream);
+        localStreamRef.current = stream;
+
+        socket.emit('init-meeting', { meetingId, userName });
       })
       .catch((err) => {
-        console.log(err);
+        setIsModalRequireCameraNameOpen(true);
+        console.warn('cannot start the camera');
+        console.warn(err);
       });
+  }, [localStreamRef, userName, meetingId, getUserMedia, setUserName, setIsModalAlertNameOpen, setIsModalRequireCameraNameOpen]);
 
-    return () => {};
-  }, [localStreamRef, startMicAndCamera]);
+  const finishMeeting = useCallback(() => {
+    for (const connections of userConnectionsMapRef.current.values()) {
+      connections.peerConnection.close();
+    }
+
+    localStreamRef.current?.getTracks().forEach((track) => {
+      track.stop();
+    });
+
+    localMediaStreamRef.current?.getTracks().forEach((track) => {
+      track.stop();
+    });
+
+    const videoElement = videoElementRef.current;
+
+    if (!videoElement) return;
+
+    const mediaStream = videoElement.srcObject as MediaStream;
+
+    mediaStream?.getTracks().forEach((track) => {
+      track.stop();
+    });
+  }, [userConnectionsMapRef, localStreamRef]);
+
+  const localVideoElementRefHandler = (videoElement: HTMLVideoElement | null) => {
+    if (videoElement) {
+      if (!videoElement.srcObject && localStreamRef.current) {
+        videoElement.srcObject = localStreamRef.current;
+      }
+
+      videoElementRef.current = videoElement;
+    }
+  };
+
+  const remoteVideoElementRefHandler = (userId: string, videoElement: HTMLVideoElement | null) => {
+    const userConnection = userConnectionsMapRef.current.get(userId);
+
+    if (!userConnection) return undefined;
+
+    if (videoElement) {
+      if (!videoElement.srcObject && localStreamRef.current) {
+        videoElement.srcObject = userConnection.stream;
+      }
+    }
+  };
 
   useEffect(() => {
-    socket.on('create-offer', async () => {
-      createOffer();
-    });
-
-    socket.on('create-answer', async ({ offer, offerCandidates }) => {
-      createAnswer(offer, offerCandidates);
-    });
-
-    socket.on('answer', async ({ answer }) => {
-      associateAnswer(answer);
-    });
-
-    socket.on('answers', async ({ data }) => {
-      addCandidate(data);
-    });
+    initMeeting();
 
     return () => {
-      // socket.off('start-call');
+      finishMeeting();
     };
-  }, [createOffer, associateAnswer]);
+  }, [initMeeting, finishMeeting]);
 
-  return { localVideoRef, remoteVideoRef };
+  const stopShareScreen = useCallback(() => {
+    if (!isSharingScreenRef.current) return;
+
+    userConnectionsMapRef.current.forEach((userConnection) => {
+      const senders = userConnection.peerConnection.getSenders();
+      const videoSender = senders.find((sender) => sender.track?.kind === 'video');
+
+      if (!videoSender) return;
+
+      localStreamRef.current?.getTracks().forEach((track) => {
+        if (track.kind !== 'video') return;
+
+        if (videoSender) {
+          videoSender.replaceTrack(track);
+        }
+      });
+
+      localMediaStreamRef.current?.getTracks().forEach((track) => {
+        track.stop();
+      });
+
+      sendAppData('stop_sharing_screen');
+
+      isSharingScreenRef.current = false;
+
+      localMediaStreamRef.current = null;
+    });
+  }, [userConnectionsMapRef, localStreamRef, sendAppData]);
+
+  const startShareScreen = useCallback(() => {
+    if (isSharingScreenRef.current) return;
+
+    getDisplayMedia()
+      .then((mediaStream) => {
+        userConnectionsMapRef.current.forEach((userConnection) => {
+          const senders = userConnection.peerConnection.getSenders();
+          const videoSender = senders.find((sender) => sender.track?.kind === 'video');
+
+          if (!videoSender) return;
+
+          mediaStream.getTracks().forEach((track) => {
+            if (track.kind !== 'video') return;
+
+            track.onended = () => {
+              stopShareScreen();
+              setProperties('shareScreen', false);
+            };
+
+            if (videoSender) {
+              videoSender.replaceTrack(track);
+            }
+          });
+
+          sendAppData('start_sharing_screen');
+
+          isSharingScreenRef.current = true;
+
+          localMediaStreamRef.current = mediaStream;
+        });
+      })
+      .catch((err) => {
+        console.warn('cannot share the screen');
+        console.warn(err);
+
+        setProperties('shareScreen', false);
+      });
+  }, [userConnectionsMapRef, getDisplayMedia, setProperties, stopShareScreen, sendAppData]);
+
+  useEffect(() => {
+    localStreamRef.current?.getTracks().forEach((track) => {
+      if (track.kind === 'audio') {
+        track.enabled = !properties.audio;
+      }
+      if (track.kind === 'video') {
+        track.enabled = !properties.video;
+      }
+    });
+    if (properties.shareScreen) {
+      startShareScreen();
+    } else {
+      stopShareScreen();
+    }
+  }, [localStreamRef, properties, setProperties, getDisplayMedia, startShareScreen, stopShareScreen]);
+
+  return {
+    isModalAlertNameOpen,
+    isModalRequireCameraNameOpen,
+    currentUsers,
+    localVideoElementRefHandler,
+    remoteVideoElementRefHandler,
+    sendChatData,
+  };
 };

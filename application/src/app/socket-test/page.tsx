@@ -11,8 +11,8 @@ const Page = () => {
     setIsConnected(true);
     setTransport(socket.io.engine.transport.name);
 
-    socket.io.engine.on('upgrade', (transport) => {
-      setTransport(transport.name);
+    socket.io.engine.on('upgrade', (upgradeTransport) => {
+      setTransport(upgradeTransport.name);
     });
   }, [setIsConnected, setTransport]);
 
