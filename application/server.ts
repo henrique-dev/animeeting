@@ -18,20 +18,60 @@ type PairType = {
   state: 'idle' | 'created';
 };
 
+type UserType = {
+  id: string;
+  name: string;
+};
+
 type MeetingType = {
+  id: string;
+  ownerId: string;
   roomId: string;
   connectionPairs: Map<string, Map<string, PairType>>;
-  users: Map<
-    string,
-    {
-      id: string;
-      name: string;
-      socketId: string;
-    }
-  >;
+  users: Map<string, UserType>;
 };
 
 const meetings = new Map<string, MeetingType>();
+const connectedUsers = new Map<string, UserType>();
+
+const createUser = (id: string) => {
+  const user = {
+    id,
+    name: '',
+  };
+
+  connectedUsers.set(id, user);
+
+  return user;
+};
+
+const deleteUser = (id: string) => {
+  connectedUsers.delete(id);
+};
+
+const createMeeting = (userId: string) => {
+  let newId = crypto.randomUUID();
+
+  while (meetings.has(newId)) {
+    newId = crypto.randomUUID();
+  }
+
+  const meeting = {
+    id: newId,
+    ownerId: userId,
+    roomId: `meeting_${newId}`,
+    users: new Map(),
+    connectionPairs: new Map(),
+  };
+
+  meetings.set(newId, meeting);
+
+  return meeting;
+};
+
+const deleteMeeting = (_id: string) => {
+  // meetings.delete(id);
+};
 
 app.prepare().then(() => {
   const httpServer = createServer(
@@ -43,20 +83,6 @@ app.prepare().then(() => {
   );
 
   const io = new Server(httpServer, {});
-
-  const getMeeting = (meetingId: string) => {
-    if (!meetings.has(meetingId)) {
-      console.log('CREATING A NEW ROOM');
-
-      meetings.set(meetingId, {
-        roomId: `meeting_${meetingId}`,
-        users: new Map(),
-        connectionPairs: new Map(),
-      });
-    }
-
-    return meetings.get(meetingId);
-  };
 
   const getConnectionPair = (meeting: MeetingType, id: string, anotherId: string) => {
     const connectionPairs = meeting.connectionPairs;
@@ -75,7 +101,7 @@ app.prepare().then(() => {
         });
       }
     } else {
-      connectionPairs.set(id, new Map([[anotherId, { role: 'answer', state: 'idle', offers: [], answers: [] }]]));
+      connectionPairs.set(id, new Map([[anotherId, { role: 'answer', state: 'idle' }]]));
     }
 
     return connectionPairs.get(id)?.get(anotherId);
@@ -89,11 +115,73 @@ app.prepare().then(() => {
     connectionPairs.get(id)?.set(anotherId, pairData);
   };
 
+  const remoteUserFromMeeting = (userId: string) => {
+    meetings.forEach((meeting) => {
+      if (meeting.users.has(userId)) {
+        const connectionPairs = meeting.connectionPairs;
+
+        if (connectionPairs) {
+          connectionPairs.delete(userId);
+        }
+
+        for (const connectionPair of connectionPairs.values()) {
+          connectionPair.delete(userId);
+        }
+
+        io.to(meeting.roomId).emit('user-leave', { id: userId });
+      }
+
+      meeting.users.delete(userId);
+
+      if (meeting.users.size === 0) {
+        deleteMeeting(meeting.id);
+      }
+    });
+  };
+
   io.on('connection', (socket) => {
-    const userId = socket.handshake.auth.userId as string;
+    createUser(socket.id);
+
+    const getMeeting = (meetingId: string) => {
+      const meeting = meetings.get(meetingId);
+
+      if (meeting) return meeting;
+
+      socket.emit('invalid-meeting');
+
+      return undefined;
+    };
+
+    const getUser = (userId: string) => {
+      const user = connectedUsers.get(userId);
+
+      if (user) return user;
+
+      socket.emit('invalid-meeting');
+
+      return undefined;
+    };
+
+    socket.on('register', () => {
+      const user = getUser(socket.id);
+
+      if (!user) return;
+
+      socket.emit('register-created', user);
+    });
+
+    socket.on('create-meeting', () => {
+      const meeting = createMeeting(socket.id);
+
+      socket.emit('meeting-created', { id: meeting.id });
+    });
 
     socket.on('init-meeting', (data) => {
       const { meetingId, userName } = data;
+
+      const user = getUser(socket.id);
+
+      if (!user) return;
 
       const meeting = getMeeting(meetingId);
 
@@ -101,13 +189,20 @@ app.prepare().then(() => {
 
       socket.join(meeting.roomId);
 
-      meeting.users.set(userId, {
-        id: userId,
+      meeting.users.set(user.id, {
+        id: user.id,
         name: userName,
-        socketId: socket.id,
       });
 
       io.to(meeting.roomId).emit('user-enter', { users: Array.from(meeting.users.values()) });
+    });
+
+    socket.on('exit-meeting', () => {
+      const user = getUser(socket.id);
+
+      if (!user) return;
+
+      remoteUserFromMeeting(user.id);
     });
 
     socket.on('decide-offer-answer', (data) => {
@@ -117,8 +212,8 @@ app.prepare().then(() => {
 
       if (!meeting) return;
 
-      const userPair = getConnectionPair(meeting, userId, anotherUserId);
-      const anotherUserPair = getConnectionPair(meeting, anotherUserId, userId);
+      const userPair = getConnectionPair(meeting, socket.id, anotherUserId);
+      const anotherUserPair = getConnectionPair(meeting, anotherUserId, socket.id);
 
       if (!userPair || !anotherUserPair) return;
 
@@ -127,139 +222,124 @@ app.prepare().then(() => {
 
         userPair.role = offer ? 'offer' : 'answer';
         userPair.state = 'created';
-        setConnectionPair(meeting, userId, anotherUserId, userPair);
+        setConnectionPair(meeting, socket.id, anotherUserId, userPair);
 
         anotherUserPair.role = offer ? 'answer' : 'offer';
         anotherUserPair.state = 'created';
-        setConnectionPair(meeting, anotherUserId, userId, anotherUserPair);
+        setConnectionPair(meeting, anotherUserId, socket.id, anotherUserPair);
       }
 
-      const anotherUser = meeting.users.get(anotherUserId);
-      const user = meeting.users.get(userId);
-
-      if (!anotherUser || !user) return;
-
       if (userPair.role === 'offer') {
-        io.to(user.socketId).emit('create-offer', { peerId: anotherUser.id });
+        socket.emit('create-offer', { peerId: anotherUserId });
       } else {
-        io.to(anotherUser.socketId).emit('create-offer', { peerId: user.id });
+        io.to(anotherUserId).emit('create-offer', { peerId: socket.id });
       }
     });
 
     socket.on('offer', (data) => {
-      const { meetingId, fromId, toId, offer } = data;
+      const { meetingId, toId, offer } = data;
 
       const meeting = getMeeting(meetingId);
 
       if (!meeting) return;
 
-      const userPair = getConnectionPair(meeting, fromId, toId);
-      const anotherUserPair = getConnectionPair(meeting, toId, fromId);
+      const userPair = getConnectionPair(meeting, socket.id, toId);
+      const anotherUserPair = getConnectionPair(meeting, toId, socket.id);
 
       if (!userPair || !anotherUserPair) return;
 
       const anotherUser = meeting.users.get(toId);
-      const user = meeting.users.get(userId);
+      const userMeeting = meeting.users.get(socket.id);
 
-      if (!anotherUser || !user) return;
+      if (!anotherUser || !userMeeting) return;
 
       if (userPair.role === 'answer') {
-        io.to(user.socketId).emit('create-answer', { peerId: anotherUser.id, offer });
+        socket.emit('create-answer', { peerId: toId, offer });
       } else {
-        io.to(anotherUser.socketId).emit('create-answer', { peerId: user.id, offer });
+        io.to(toId).emit('create-answer', { peerId: socket.id, offer });
       }
     });
 
     socket.on('answer', (data) => {
-      const { meetingId, fromId, toId, answer } = data;
+      const { meetingId, toId, answer } = data;
 
       const meeting = getMeeting(meetingId);
 
       if (!meeting) return;
 
-      const userPair = getConnectionPair(meeting, fromId, toId);
-      const anotherUserPair = getConnectionPair(meeting, toId, fromId);
+      const userPair = getConnectionPair(meeting, socket.id, toId);
+      const anotherUserPair = getConnectionPair(meeting, toId, socket.id);
 
       if (!userPair || !anotherUserPair) return;
 
       const anotherUser = meeting.users.get(toId);
-      const user = meeting.users.get(userId);
+      const userMeeting = meeting.users.get(socket.id);
 
-      if (!anotherUser || !user) return;
+      if (!anotherUser || !userMeeting) return;
 
       if (userPair.role === 'offer') {
-        io.to(user.socketId).emit('answer-found', { peerId: anotherUser.id, answer });
+        socket.emit('answer-found', { peerId: toId, answer });
       } else {
-        io.to(anotherUser.socketId).emit('answer-found', { peerId: user.id, answer });
+        io.to(toId).emit('answer-found', { peerId: socket.id, answer });
       }
     });
 
     socket.on('offer-candidates', (data) => {
-      const { meetingId, fromId, toId, candidate } = data;
+      const { meetingId, toId, candidate } = data;
 
       const meeting = getMeeting(meetingId);
 
       if (!meeting) return;
 
-      const userPair = getConnectionPair(meeting, fromId, toId);
-      const anotherUserPair = getConnectionPair(meeting, toId, fromId);
+      const userPair = getConnectionPair(meeting, socket.id, toId);
+      const anotherUserPair = getConnectionPair(meeting, toId, socket.id);
 
       if (!userPair || !anotherUserPair) return;
 
       const anotherUser = meeting.users.get(toId);
-      const user = meeting.users.get(userId);
+      const userMeeting = meeting.users.get(socket.id);
 
-      if (!anotherUser || !user) return;
+      if (!anotherUser || !userMeeting) return;
 
       if (userPair.role === 'answer') {
-        io.to(user.socketId).emit('offer-candidate', { peerId: anotherUser.id, candidate });
+        socket.emit('offer-candidate', { peerId: toId, candidate });
       } else {
-        io.to(anotherUser.socketId).emit('offer-candidate', { peerId: user.id, candidate });
+        io.to(toId).emit('offer-candidate', { peerId: socket.id, candidate });
       }
     });
 
     socket.on('answer-candidates', (data) => {
-      const { meetingId, fromId, toId, candidate } = data;
+      const { meetingId, toId, candidate } = data;
 
       const meeting = getMeeting(meetingId);
 
       if (!meeting) return;
 
-      const userPair = getConnectionPair(meeting, fromId, toId);
-      const anotherUserPair = getConnectionPair(meeting, toId, fromId);
+      const userPair = getConnectionPair(meeting, socket.id, toId);
+      const anotherUserPair = getConnectionPair(meeting, toId, socket.id);
 
       if (!userPair || !anotherUserPair) return;
 
       const anotherUser = meeting.users.get(toId);
-      const user = meeting.users.get(userId);
+      const userMeeting = meeting.users.get(socket.id);
 
-      if (!anotherUser || !user) return;
+      if (!anotherUser || !userMeeting) return;
 
       if (userPair.role === 'offer') {
-        io.to(user.socketId).emit('answer-candidate', { peerId: anotherUser.id, candidate });
+        socket.emit('answer-candidate', { peerId: toId, candidate });
       } else {
-        io.to(anotherUser.socketId).emit('answer-candidate', { peerId: user.id, candidate });
+        io.to(toId).emit('answer-candidate', { peerId: socket.id, candidate });
       }
     });
 
     socket.on('disconnect', () => {
-      meetings.forEach((meeting) => {
-        if (meeting.users.has(userId)) {
-          const connectionPairs = meeting.connectionPairs;
+      const user = getUser(socket.id);
 
-          if (connectionPairs) {
-            connectionPairs.delete(userId);
-          }
+      if (!user) return;
 
-          for (const connectionPair of connectionPairs.values()) {
-            connectionPair.delete(userId);
-          }
+      remoteUserFromMeeting(user.id);
 
-          io.to(meeting.roomId).emit('user-leave', { user: { id: userId } });
-        }
-
-        meeting.users.delete(userId);
-      });
+      deleteUser(socket.id);
     });
   });
 

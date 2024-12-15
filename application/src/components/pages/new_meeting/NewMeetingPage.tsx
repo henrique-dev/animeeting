@@ -1,14 +1,17 @@
 'use client';
 
-import { Button, Chip, Input, Spinner } from '@nextui-org/react';
+import { SocketIoContext } from '@/providers/SocketIoProvider';
+import { Alert, Button, Chip, Input, Spinner } from '@nextui-org/react';
 import { useRouter } from 'next/navigation';
+import { useContext } from 'react';
 import { useNewMeeting } from './use-new-meeting';
 
 export const NewMeetingPage = () => {
-  const { mediaAllowed, name, setName, registerVideoRef, createNewMeetingHandler } = useNewMeeting();
+  const { isConnected } = useContext(SocketIoContext);
+  const { isSubmitting, mediaAllowed, name, setName, registerVideoRef, createNewMeetingHandler } = useNewMeeting();
   const router = useRouter();
 
-  const disableSubmit = name.trim() === '' || !mediaAllowed;
+  const disableSubmit = name.trim() === '' || !mediaAllowed || !isConnected || isSubmitting;
 
   return (
     <div className="flex h-full w-full items-center justify-center p-2">
@@ -29,14 +32,15 @@ export const NewMeetingPage = () => {
           </div>
         )}
         <div className="flex w-full flex-col space-y-2">
-          <Input label="Name" value={name} onValueChange={setName} />
-          <Button onPress={createNewMeetingHandler} color="primary" isDisabled={disableSubmit}>
+          <Input label="Name" value={name} onValueChange={setName} isDisabled={isSubmitting} />
+          <Button onPress={createNewMeetingHandler} color="primary" isDisabled={disableSubmit} isLoading={isSubmitting}>
             Start meeting
           </Button>
-          <Button onPress={router.push.bind(null, '/meetings', {})} color="secondary">
+          <Button onPress={router.push.bind(null, '/meetings', {})} color="secondary" isDisabled={isSubmitting}>
             Back
           </Button>
         </div>
+        {!isConnected && <Alert description={'Cannot connect to server at the moment'} title={'Disconnected'} color="danger" />}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { socketUserId } from '@/socket';
+import { SocketIoContext } from '@/providers/SocketIoProvider';
 import { PaperAirplaneIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Button, Textarea } from '@nextui-org/react';
 import { useContext, useState } from 'react';
@@ -9,12 +9,13 @@ type ChatProps = {
 };
 
 export const Chat = ({ sendChatData }: ChatProps) => {
+  const { userId } = useContext(SocketIoContext);
   const { userName, properties, messages, setMessages, setProperties } = useContext(MeetingContext);
   const [messageToSend, setMessageToSend] = useState('');
 
   const sendMessage = () => {
-    sendChatData(JSON.stringify({ from: userName, message: messageToSend, userId: socketUserId }));
-    setMessages((oldMessages) => [...oldMessages, { from: '', message: messageToSend, userId: socketUserId }]);
+    sendChatData(JSON.stringify({ from: userName, message: messageToSend, userId }));
+    setMessages((oldMessages) => [...oldMessages, { from: '', message: messageToSend, userId }]);
     setMessageToSend('');
   };
 
@@ -39,7 +40,7 @@ export const Chat = ({ sendChatData }: ChatProps) => {
       </div>
       <div className="flex-1 flex-col space-y-4 overflow-auto p-2">
         {messages.map((message, index) => {
-          if (message.userId === socketUserId) {
+          if (message.userId === userId) {
             return (
               <div key={index} className="space-y-1">
                 <p className="mr-4 rounded-lg bg-zinc-700 p-2">{message.message}</p>

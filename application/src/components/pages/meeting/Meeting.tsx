@@ -4,6 +4,7 @@ import { LinkCopy } from './LinkCopy';
 import { MeetingBar } from './MeetingBar';
 import { ModalEnterName } from './ModalEnterName';
 import { ModalRequireMedia } from './ModalRequireMedia';
+import { Notifications } from './Notifications';
 import { NoUsers } from './NoUsers';
 import { useMeeting } from './use-meeting';
 import { UsersVideoShow } from './UsersVideoShow';
@@ -18,8 +19,9 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
     currentUsers,
     isModalAlertNameOpen,
     isModalRequireCameraNameOpen,
-    remoteVideoElementRefHandler,
     localVideoElementRefHandler,
+    localVideoElementMediaStreamRefHandler,
+    remoteVideoElementRefHandler,
     sendChatData,
   } = useMeeting({
     meetingId,
@@ -27,7 +29,7 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
 
   return (
     <div className="flex h-full w-full flex-col bg-zinc-800">
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="relative flex flex-1 overflow-hidden">
         <div
           className={twJoin(
             'relative max-h-screen flex-1 items-center justify-center',
@@ -42,9 +44,11 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
           <UserVideoShow
             users={currentUsers}
             localVideoElementRefHandler={localVideoElementRefHandler}
+            localVideoElementMediaStreamRefHandler={localVideoElementMediaStreamRefHandler}
             remoteVideoElementRefHandler={remoteVideoElementRefHandler}
           />
           {currentUsers.length === 0 && <NoUsers />}
+          <Notifications />
         </div>
         <Chat sendChatData={sendChatData} />
       </div>

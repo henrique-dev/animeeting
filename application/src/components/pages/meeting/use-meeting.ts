@@ -1,5 +1,5 @@
-import { socket } from '@/socket';
-import { useCallback, useContext, useEffect, useRef } from 'react';
+import { SocketIoContext } from '@/providers/SocketIoProvider';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { MeetingContext } from './MeetingProvider';
 import { useAlertModal } from './use-alert-modal';
 import { useConnections } from './use-connections';
@@ -10,13 +10,14 @@ type UseMeetingProps = {
 };
 
 export const useMeeting = ({ meetingId }: UseMeetingProps) => {
+  const { socket } = useContext(SocketIoContext);
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const { userName, properties, setProperties, setUserName } = useContext(MeetingContext);
   const { currentUsers, localStreamRef, userConnectionsMapRef, sendAppData, sendChatData } = useConnections({
     meetingId,
   });
   const localMediaStreamRef = useRef<MediaStream>(null);
-  const isSharingScreenRef = useRef(false);
+  const [isSharingScreen, setIsSharingScreen] = useState(false);
   const { getUserMedia, getDisplayMedia } = useMedia();
   const { isModalAlertNameOpen, isModalRequireCameraNameOpen, setIsModalAlertNameOpen, setIsModalRequireCameraNameOpen } = useAlertModal();
 
@@ -33,14 +34,14 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
       .then((stream) => {
         localStreamRef.current = stream;
 
-        socket.emit('init-meeting', { meetingId, userName });
+        socket?.emit('init-meeting', { meetingId, userName });
       })
       .catch((err) => {
         setIsModalRequireCameraNameOpen(true);
         console.warn('cannot start the camera');
         console.warn(err);
       });
-  }, [localStreamRef, userName, meetingId, getUserMedia, setUserName, setIsModalAlertNameOpen, setIsModalRequireCameraNameOpen]);
+  }, [socket, localStreamRef, userName, meetingId, getUserMedia, setUserName, setIsModalAlertNameOpen, setIsModalRequireCameraNameOpen]);
 
   const finishMeeting = useCallback(() => {
     for (const connections of userConnectionsMapRef.current.values()) {
@@ -76,6 +77,14 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
     }
   };
 
+  const localVideoElementMediaStreamRefHandler = (videoElement: HTMLVideoElement | null) => {
+    if (videoElement) {
+      if (!videoElement.srcObject && localMediaStreamRef.current) {
+        videoElement.srcObject = localMediaStreamRef.current;
+      }
+    }
+  };
+
   const remoteVideoElementRefHandler = (userId: string, videoElement: HTMLVideoElement | null) => {
     const userConnection = userConnectionsMapRef.current.get(userId);
 
@@ -88,16 +97,8 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
     }
   };
 
-  useEffect(() => {
-    initMeeting();
-
-    return () => {
-      finishMeeting();
-    };
-  }, [initMeeting, finishMeeting]);
-
   const stopShareScreen = useCallback(() => {
-    if (!isSharingScreenRef.current) return;
+    if (!isSharingScreen) return;
 
     userConnectionsMapRef.current.forEach((userConnection) => {
       const senders = userConnection.peerConnection.getSenders();
@@ -112,21 +113,21 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
           videoSender.replaceTrack(track);
         }
       });
-
-      localMediaStreamRef.current?.getTracks().forEach((track) => {
-        track.stop();
-      });
-
-      sendAppData('stop_sharing_screen');
-
-      isSharingScreenRef.current = false;
-
-      localMediaStreamRef.current = null;
     });
-  }, [userConnectionsMapRef, localStreamRef, sendAppData]);
+
+    localMediaStreamRef.current?.getTracks().forEach((track) => {
+      track.stop();
+    });
+
+    sendAppData('stop_sharing_screen');
+
+    setIsSharingScreen(false);
+
+    localMediaStreamRef.current = null;
+  }, [userConnectionsMapRef, localStreamRef, isSharingScreen, sendAppData, setIsSharingScreen]);
 
   const startShareScreen = useCallback(() => {
-    if (isSharingScreenRef.current) return;
+    if (isSharingScreen) return;
 
     getDisplayMedia()
       .then((mediaStream) => {
@@ -139,22 +140,26 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
           mediaStream.getTracks().forEach((track) => {
             if (track.kind !== 'video') return;
 
-            track.onended = () => {
-              stopShareScreen();
-              setProperties('shareScreen', false);
-            };
-
             if (videoSender) {
               videoSender.replaceTrack(track);
             }
           });
-
-          sendAppData('start_sharing_screen');
-
-          isSharingScreenRef.current = true;
-
-          localMediaStreamRef.current = mediaStream;
         });
+
+        mediaStream.getTracks().forEach((track) => {
+          if (track.kind !== 'video') return;
+
+          track.onended = () => {
+            stopShareScreen();
+            setProperties('shareScreen', false);
+          };
+        });
+
+        sendAppData('start_sharing_screen');
+
+        setIsSharingScreen(true);
+
+        localMediaStreamRef.current = mediaStream;
       })
       .catch((err) => {
         console.warn('cannot share the screen');
@@ -162,15 +167,23 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
 
         setProperties('shareScreen', false);
       });
-  }, [userConnectionsMapRef, getDisplayMedia, setProperties, stopShareScreen, sendAppData]);
+  }, [userConnectionsMapRef, isSharingScreen, getDisplayMedia, setProperties, stopShareScreen, sendAppData, setIsSharingScreen]);
+
+  useEffect(() => {
+    initMeeting();
+
+    return () => {
+      finishMeeting();
+    };
+  }, [initMeeting, finishMeeting]);
 
   useEffect(() => {
     localStreamRef.current?.getTracks().forEach((track) => {
       if (track.kind === 'audio') {
-        track.enabled = !properties.audio;
+        track.enabled = properties.audio;
       }
       if (track.kind === 'video') {
-        track.enabled = !properties.video;
+        track.enabled = properties.video;
       }
     });
     if (properties.shareScreen) {
@@ -185,6 +198,7 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
     isModalRequireCameraNameOpen,
     currentUsers,
     localVideoElementRefHandler,
+    localVideoElementMediaStreamRefHandler,
     remoteVideoElementRefHandler,
     sendChatData,
   };

@@ -1,11 +1,11 @@
-import { socket, socketUserId } from '@/socket';
+import { SocketIoContext } from '@/providers/SocketIoProvider';
+import { useRouter } from 'next/navigation';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { MeetingContext } from './MeetingProvider';
 
 export type UserType = {
   id: string;
   name: string;
-  socketId: string;
 };
 
 export type UserConnectionMapType = {
@@ -29,10 +29,12 @@ type UseConnectionsProps = {
 };
 
 export const useConnections = ({ meetingId }: UseConnectionsProps) => {
+  const { socket, isConnected, userId } = useContext(SocketIoContext);
   const { onDataAppReceived, onDataChatReceived } = useContext(MeetingContext);
   const userConnectionsMapRef = useRef<Map<string, UserConnectionMapType>>(new Map());
   const localStreamRef = useRef<MediaStream>(null);
   const [currentUsers, setCurrentUsers] = useState<UserType[]>([]);
+  const router = useRouter();
 
   const sendAppData = useCallback((data: string) => {
     userConnectionsMapRef.current.forEach((connection) => {
@@ -46,19 +48,19 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
     });
   }, []);
 
-  const onUserLeave = useCallback((user: UserType) => {
-    console.log('USER LEAVE', user);
-    userConnectionsMapRef.current.delete(user.id);
+  const onUserLeave = useCallback(
+    (user: UserType) => {
+      userConnectionsMapRef.current.delete(user.id);
 
-    setCurrentUsers((oldUsers) => oldUsers.filter((oldUser) => oldUser.id !== user.id));
-  }, []);
+      setCurrentUsers((oldUsers) => oldUsers.filter((oldUser) => oldUser.id !== user.id));
+    },
+    [setCurrentUsers]
+  );
 
   const onUserEnter = useCallback(
     (users: UserType[]) => {
       users.forEach((user) => {
-        if (user.id === socketUserId || userConnectionsMapRef.current.has(user.id)) return;
-
-        console.log('USER ENTER');
+        if (user.id === userId || userConnectionsMapRef.current.has(user.id)) return;
 
         const localeStream = localStreamRef.current;
         const peerConnection = new RTCPeerConnection(peerConfiguration);
@@ -109,12 +111,12 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
           state: 'idle',
         });
 
-        socket.emit('decide-offer-answer', { meetingId, anotherUserId: user.id });
+        socket?.emit('decide-offer-answer', { meetingId, anotherUserId: user.id });
       });
 
-      setCurrentUsers(() => users.filter((userToFilter) => userToFilter.id !== socketUserId));
+      setCurrentUsers(() => users.filter((userToFilter) => userToFilter.id !== userId));
     },
-    [meetingId, setCurrentUsers, onDataAppReceived, onDataChatReceived, onUserLeave]
+    [socket, userId, meetingId, setCurrentUsers, onDataAppReceived, onDataChatReceived, onUserLeave]
   );
 
   const onCreateOffer = useCallback(
@@ -128,15 +130,15 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
       userConnection.peerConnection.onicecandidate = ({ candidate }) => {
         if (!candidate) return;
 
-        socket.emit('offer-candidates', { meetingId, fromId: socketUserId, toId: peerId, candidate });
+        socket?.emit('offer-candidates', { meetingId, toId: peerId, candidate });
       };
 
       const offerDescription = await userConnection.peerConnection.createOffer();
       await userConnection.peerConnection.setLocalDescription(offerDescription);
 
-      socket.emit('offer', { meetingId, fromId: socketUserId, toId: peerId, offer: offerDescription });
+      socket?.emit('offer', { meetingId, toId: peerId, offer: offerDescription });
     },
-    [meetingId]
+    [socket, meetingId]
   );
 
   const onCreateAnswer = useCallback(
@@ -148,7 +150,7 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
       userConnection.peerConnection.onicecandidate = ({ candidate }) => {
         if (!candidate) return;
 
-        socket.emit('answer-candidates', { meetingId, fromId: socketUserId, toId: peerId, candidate });
+        socket?.emit('answer-candidates', { meetingId, toId: peerId, candidate });
       };
 
       userConnection.peerConnection.setRemoteDescription(offer);
@@ -156,9 +158,9 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
       const answerDescription = await userConnection.peerConnection.createAnswer();
       await userConnection.peerConnection.setLocalDescription(answerDescription);
 
-      socket.emit('answer', { meetingId, from: socketUserId, toId: peerId, answer: answerDescription });
+      socket?.emit('answer', { meetingId, toId: peerId, answer: answerDescription });
     },
-    [meetingId]
+    [socket, meetingId]
   );
 
   const onAnswerFound = useCallback((peerId: string, answer: RTCSessionDescriptionInit) => {
@@ -184,45 +186,60 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
     userConnection?.peerConnection.addIceCandidate(candidate);
   }, []);
 
+  const onInvalidMeeting = useCallback(() => {
+    router.push('/meetings');
+  }, [router]);
+
   useEffect(() => {
-    socket.on('user-enter', async ({ users }) => {
+    socket?.on('user-enter', async ({ users }) => {
       onUserEnter(users);
     });
 
-    socket.on('create-offer', async ({ peerId }) => {
+    socket?.on('create-offer', async ({ peerId }) => {
       onCreateOffer(peerId);
     });
 
-    socket.on('create-answer', async ({ peerId, offer }) => {
+    socket?.on('create-answer', async ({ peerId, offer }) => {
       onCreateAnswer(peerId, offer);
     });
 
-    socket.on('answer-found', async ({ peerId, answer }) => {
+    socket?.on('answer-found', async ({ peerId, answer }) => {
       onAnswerFound(peerId, answer);
     });
 
-    socket.on('offer-candidate', async ({ peerId, candidate }) => {
+    socket?.on('offer-candidate', async ({ peerId, candidate }) => {
       onOfferCandidate(peerId, candidate);
     });
 
-    socket.on('answer-candidate', async ({ peerId, candidate }) => {
+    socket?.on('answer-candidate', async ({ peerId, candidate }) => {
       onAnswerCandidate(peerId, candidate);
     });
 
-    socket.on('user-leave', async ({ user }) => {
-      onUserLeave(user);
-    });
+    socket?.on('user-leave', onUserLeave);
+
+    socket?.on('invalid-meeting', onInvalidMeeting);
 
     return () => {
-      socket.off('user-enter');
-      socket.off('create-offer');
-      socket.off('create-answer');
-      socket.off('answer-found');
-      socket.off('offer-candidate');
-      socket.off('answer-candidate');
-      socket.off('user-leave');
+      socket?.off('user-enter');
+      socket?.off('create-offer');
+      socket?.off('create-answer');
+      socket?.off('answer-found');
+      socket?.off('offer-candidate');
+      socket?.off('answer-candidate');
+      socket?.off('user-leave');
     };
-  }, [onUserEnter, onUserLeave, onCreateOffer, onCreateAnswer, onAnswerFound, onOfferCandidate, onAnswerCandidate]);
+  }, [
+    socket,
+    isConnected,
+    onUserEnter,
+    onUserLeave,
+    onCreateOffer,
+    onCreateAnswer,
+    onAnswerFound,
+    onOfferCandidate,
+    onAnswerCandidate,
+    onInvalidMeeting,
+  ]);
 
   return { currentUsers, localStreamRef, userConnectionsMapRef, sendAppData, sendChatData };
 };

@@ -1,29 +1,27 @@
 'use client';
 
-import { api } from '@/services/api';
+import { SocketIoContext } from '@/providers/SocketIoProvider';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 
 export const useNewMeeting = () => {
+  const { socket } = useContext(SocketIoContext);
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const mediaStreamRef = useRef<MediaStream>(null);
   const [mediaAllowed, setMediaAllowed] = useState<boolean | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState('');
   const router = useRouter();
 
   const createNewMeetingHandler = () => {
     localStorage.setItem('name', name);
 
-    api
-      .post('/api/meetings')
-      .then(async (response) => {
-        const data = await response.json();
+    socket?.on('meeting-created', ({ id }) => {
+      router.push(`/meetings/${id}`);
+    });
 
-        router.push(`/meetings/${data.id}`);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    socket?.emit('create-meeting');
+    setIsSubmitting(true);
   };
 
   const registerVideoRef = (videoElement: HTMLVideoElement | null) => {
@@ -72,5 +70,5 @@ export const useNewMeeting = () => {
     };
   }, [setMediaAllowed]);
 
-  return { mediaAllowed, name, setName, createNewMeetingHandler, registerVideoRef };
+  return { isSubmitting, mediaAllowed, name, setName, createNewMeetingHandler, registerVideoRef };
 };

@@ -52,8 +52,8 @@ type MeetingProviderProps = {
 export const MeetingProvider = ({ children }: MeetingProviderProps) => {
   const [userName, setUserName] = useState<string | null>(null);
   const [properties, setProperties] = useState<PropertiesType>({
-    video: false,
-    audio: false,
+    video: true,
+    audio: true,
     audioDevice: 'default',
     videoDevice: 'default',
     shareScreen: false,

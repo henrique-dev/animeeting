@@ -1,16 +1,21 @@
 'use client';
 
-import { socket } from '@/socket';
 import React, { useCallback, useEffect, useState } from 'react';
+import { DefaultEventsMap } from 'socket.io';
+import { io, Socket } from 'socket.io-client';
 
 type SocketIoContextProps = {
+  userId: string;
   isConnected: boolean;
   transport: string;
+  socket: Socket<DefaultEventsMap, DefaultEventsMap> | null;
 };
 
 export const SocketIoContext = React.createContext<SocketIoContextProps>({
+  userId: '',
   isConnected: true,
   transport: '',
+  socket: null,
 });
 
 type SocketIoProviderProps = {
@@ -18,42 +23,64 @@ type SocketIoProviderProps = {
 };
 
 export const SocketIoProvider = ({ children }: SocketIoProviderProps) => {
+  const [userId, setUserId] = useState('');
+  const [socket, setSocket] = useState<Socket<DefaultEventsMap, DefaultEventsMap> | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [transport, setTransport] = useState('N/A');
 
   const onConnect = useCallback(() => {
     setIsConnected(true);
-    setTransport(socket.io.engine.transport.name);
 
-    socket.io.engine.on('upgrade', (upgradeTransport) => {
+    if (socket) setTransport(socket.io.engine.transport.name);
+
+    socket?.io.engine.on('upgrade', (upgradeTransport) => {
       setTransport(upgradeTransport.name);
     });
-  }, [setIsConnected, setTransport]);
+  }, [socket, setIsConnected, setTransport]);
 
   const onDisconnect = useCallback(() => {
     setIsConnected(false);
     setTransport('N/A');
   }, [setIsConnected, setTransport]);
 
+  const onRegisterSuccess = useCallback(
+    ({ id }: { id: string }) => {
+      setUserId(id);
+    },
+    [setUserId]
+  );
+
   useEffect(() => {
-    if (socket.connected) {
+    setSocket(io());
+  }, [setSocket]);
+
+  useEffect(() => {
+    if (socket?.connected) {
       onConnect();
     }
 
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
+    socket?.on('connect', onConnect);
+    socket?.on('disconnect', onDisconnect);
+    socket?.on('register-created', onRegisterSuccess);
+
+    socket?.emit('register');
 
     return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
+      socket?.off('connect', onConnect);
+      socket?.off('disconnect', onDisconnect);
+      socket?.off('register-created', onRegisterSuccess);
+
+      socket?.disconnect();
     };
-  }, [onConnect, onDisconnect]);
+  }, [socket, onConnect, onDisconnect, onRegisterSuccess]);
 
   return (
     <SocketIoContext.Provider
       value={{
+        userId,
         isConnected,
         transport,
+        socket,
       }}
     >
       {children}
