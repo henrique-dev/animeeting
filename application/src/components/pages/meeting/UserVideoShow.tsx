@@ -15,17 +15,17 @@ export const UserVideoShow = ({
   localVideoElementMediaStreamRefHandler,
   remoteVideoElementRefHandler,
 }: UserVideoShowProps) => {
-  const { userProperties } = useContext(MeetingContext);
+  const { userProperties, meetingProperties } = useContext(MeetingContext);
 
-  if (!userProperties.selectedUserId && !userProperties.shareScreen) return undefined;
+  if (!meetingProperties.userInFocusId && !userProperties.shareScreen) return undefined;
 
-  const user = users.find((userToFInd) => userToFInd.id === userProperties.selectedUserId);
+  const user = users.find((userToFInd) => userToFInd.id === meetingProperties.userInFocusId);
 
   const videoToShowRefHandler = (videoElement: HTMLVideoElement | null) => {
     if (userProperties.shareScreen) {
       localVideoElementMediaStreamRefHandler(videoElement);
-    } else if (userProperties.selectedUserId) {
-      remoteVideoElementRefHandler(userProperties.selectedUserId, videoElement);
+    } else if (meetingProperties.userInFocusId) {
+      remoteVideoElementRefHandler(meetingProperties.userInFocusId, videoElement);
     }
   };
 

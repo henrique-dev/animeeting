@@ -31,12 +31,6 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
   const [currentUsers, setCurrentUsers] = useState<UserType[]>([]);
   const router = useRouter();
 
-  const sendAppData = useCallback((data: string) => {
-    userConnectionsMapRef.current.forEach((connection) => {
-      connection.appDataChannel.send(data);
-    });
-  }, [userConnectionsMapRef]);
-
   const onUserLeave = useCallback(
     (user: UserType) => {
       userConnectionsMapRef.current.delete(user.id);
@@ -239,5 +233,5 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
     onInvalidMeeting,
   ]);
 
-  return { currentUsers, localStreamRef, userConnectionsMapRef, sendAppData };
+  return { currentUsers, localStreamRef, userConnectionsMapRef };
 };

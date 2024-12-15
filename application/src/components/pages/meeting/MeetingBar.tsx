@@ -7,10 +7,16 @@ import { ChatContext } from './ChatProvider';
 import { MeetingContext } from './MeetingProvider';
 import { useMedia } from './use-media';
 
-export const MeetingBar = () => {
+type MeetingBarProps = {
+  toggleShareScreen: () => void;
+  toggleVideo: () => void;
+  toggleAudio: () => void;
+};
+
+export const MeetingBar = ({ toggleShareScreen, toggleVideo, toggleAudio }: MeetingBarProps) => {
   const { socket } = useContext(SocketIoContext);
   const { setIsChatVisible } = useContext(ChatContext);
-  const { userProperties, setUserProperties } = useContext(MeetingContext);
+  const { userProperties } = useContext(MeetingContext);
   const { disableShareScreen } = useMedia();
   const router = useRouter();
 
@@ -23,10 +29,7 @@ export const MeetingBar = () => {
     <div className="grid grid-cols-1 gap-y-4 border-t border-zinc-900 bg-top px-4 py-2 text-white sm:flex">
       <div className="flex space-x-4">
         <div className="flex w-1/2 justify-center">
-          <button
-            className="flex flex-col items-center justify-center space-y-1"
-            onClick={setUserProperties.bind(null, 'audio', !userProperties.audio)}
-          >
+          <button className="flex flex-col items-center justify-center space-y-1" onClick={toggleAudio}>
             {userProperties.audio && (
               <>
                 <MicrophoneIcon className="h-8 w-8 text-green-500" />
@@ -42,10 +45,7 @@ export const MeetingBar = () => {
           </button>
         </div>
         <div className="flex w-1/2 justify-center">
-          <button
-            className="flex flex-col items-center justify-center space-y-1"
-            onClick={setUserProperties.bind(null, 'video', !userProperties.video)}
-          >
+          <button className="flex flex-col items-center justify-center space-y-1" onClick={toggleVideo}>
             {userProperties.video && (
               <>
                 <VideoCameraIcon className="h-8 w-8 text-green-500" />
@@ -70,10 +70,7 @@ export const MeetingBar = () => {
         </div>
         {!disableShareScreen && (
           <div className="flex w-1/2 justify-center sm:w-auto">
-            <button
-              className="flex flex-col items-center justify-center space-y-1"
-              onClick={setUserProperties.bind(null, 'shareScreen', !userProperties.shareScreen)}
-            >
+            <button className="flex flex-col items-center justify-center space-y-1" onClick={toggleShareScreen}>
               {userProperties.shareScreen && (
                 <>
                   <ComputerDesktopIcon className="h-8 w-8 text-green-500" />

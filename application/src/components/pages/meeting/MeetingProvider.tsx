@@ -1,20 +1,25 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-type PropertiesType = {
+type UserPropertiesType = {
   video: boolean;
   audio: boolean;
   audioDevice: string;
   videoDevice: string;
   shareScreen: boolean;
-  selectedUserId?: string;
+};
+
+type MeetingPropertiesType = {
+  userInFocusId?: string;
 };
 
 type MeetingContextProps = {
   userName: string | null;
-  userProperties: PropertiesType;
+  userProperties: UserPropertiesType;
+  meetingProperties: MeetingPropertiesType;
   setUserName: React.Dispatch<React.SetStateAction<string | null>>;
-  setUserProperties: (key: string, value: string | boolean) => void;
+  setUserProperties: (key: keyof UserPropertiesType, value: string | boolean) => void;
   onDataAppReceived: (userId: string, event: MessageEvent) => void;
+  setMeetingProperties: (key: keyof MeetingPropertiesType, value: string | boolean | undefined) => void;
 };
 
 export const MeetingContext = React.createContext<MeetingContextProps>({
@@ -26,8 +31,12 @@ export const MeetingContext = React.createContext<MeetingContextProps>({
     videoDevice: 'default',
     shareScreen: false,
   },
+  meetingProperties: {
+    userInFocusId: undefined,
+  },
   setUserName: () => undefined,
   setUserProperties: () => undefined,
+  setMeetingProperties: () => undefined,
   onDataAppReceived: () => undefined,
 });
 
@@ -37,16 +46,18 @@ type MeetingProviderProps = {
 
 export const MeetingProvider = ({ children }: MeetingProviderProps) => {
   const [userName, setUserName] = useState<string | null>(null);
-  const [userProperties, setUserProperties] = useState<PropertiesType>({
+  const [userProperties, setUserProperties] = useState<UserPropertiesType>({
     video: true,
     audio: true,
     audioDevice: 'default',
     videoDevice: 'default',
     shareScreen: false,
-    selectedUserId: undefined,
+  });
+  const [meetingProperties, setMeetingProperties] = useState<MeetingPropertiesType>({
+    userInFocusId: undefined,
   });
 
-  const changePropertiesHandler = useCallback(
+  const changeUserPropertiesHandler = useCallback(
     (key: string, value: string | boolean | undefined) => {
       setUserProperties((oldProperties) => ({
         ...oldProperties,
@@ -56,18 +67,28 @@ export const MeetingProvider = ({ children }: MeetingProviderProps) => {
     [setUserProperties]
   );
 
+  const changeMeetingPropertiesHandler = useCallback(
+    (key: string, value: string | boolean | undefined) => {
+      setMeetingProperties((oldProperties) => ({
+        ...oldProperties,
+        [key]: value,
+      }));
+    },
+    [setMeetingProperties]
+  );
+
   const onDataAppReceived = useCallback(
     (userId: string, event: MessageEvent) => {
       switch (event.data) {
         case 'start_sharing_screen':
-          changePropertiesHandler('selectedUserId', userId);
+          changeMeetingPropertiesHandler('userInFocusId', userId);
           break;
         case 'stop_sharing_screen':
-          changePropertiesHandler('selectedUserId', undefined);
+          changeMeetingPropertiesHandler('userInFocusId', undefined);
           break;
       }
     },
-    [changePropertiesHandler]
+    [changeMeetingPropertiesHandler]
   );
 
   useEffect(() => {
@@ -81,9 +102,11 @@ export const MeetingProvider = ({ children }: MeetingProviderProps) => {
       value={{
         userName,
         userProperties,
+        meetingProperties,
         setUserName,
-        setUserProperties: changePropertiesHandler,
+        setUserProperties: changeUserPropertiesHandler,
         onDataAppReceived,
+        setMeetingProperties: changeMeetingPropertiesHandler,
       }}
     >
       {children}

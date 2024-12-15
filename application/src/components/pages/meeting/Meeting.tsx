@@ -22,6 +22,9 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
     localVideoElementRefHandler,
     localVideoElementMediaStreamRefHandler,
     remoteVideoElementRefHandler,
+    toggleShareScreen,
+    toggleVideo,
+    toggleAudio,
   } = useMeeting({
     meetingId,
   });
@@ -54,7 +57,7 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
       <LinkCopy />
       <ModalEnterName isOpen={isModalAlertNameOpen} />
       <ModalRequireMedia isOpen={isModalRequireCameraNameOpen} />
-      <MeetingBar />
+      <MeetingBar toggleShareScreen={toggleShareScreen} toggleVideo={toggleVideo} toggleAudio={toggleAudio} />
     </div>
   );
 };

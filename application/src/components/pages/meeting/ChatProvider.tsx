@@ -30,7 +30,7 @@ type ChatProviderProps = {
 };
 
 export const ChatProvider = ({ children }: ChatProviderProps) => {
-  const { userConnectionsMapRef } = useContext(ConnectionContext);
+  const { sendChatData } = useContext(ConnectionContext);
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [messages, setMessages] = useState<MessageType[]>([]);
 
@@ -38,13 +38,11 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     (message: MessageType) => {
       const dataToSend = JSON.stringify(message);
 
-      userConnectionsMapRef.current.forEach((connection) => {
-        connection.chatDataChannel.send(dataToSend);
-      });
+      sendChatData(dataToSend);
 
       setMessages((oldMessages) => [...oldMessages, message]);
     },
-    [userConnectionsMapRef, setMessages]
+    [sendChatData, setMessages]
   );
 
   const onDataChatReceived = useCallback(

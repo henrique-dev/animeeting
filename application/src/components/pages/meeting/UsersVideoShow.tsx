@@ -10,9 +10,9 @@ type UsersVideoShowProps = {
 };
 
 export const UsersVideoShow = ({ localVideoElementRefHandler, users, remoteVideoElementRefHandler }: UsersVideoShowProps) => {
-  const { userProperties } = useContext(MeetingContext);
+  const { userProperties, meetingProperties } = useContext(MeetingContext);
 
-  if (userProperties.selectedUserId || userProperties.shareScreen) return undefined;
+  if (meetingProperties.userInFocusId || userProperties.shareScreen) return undefined;
 
   return (
     <>
