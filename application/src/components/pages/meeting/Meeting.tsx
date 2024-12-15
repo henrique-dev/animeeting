@@ -22,7 +22,6 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
     localVideoElementRefHandler,
     localVideoElementMediaStreamRefHandler,
     remoteVideoElementRefHandler,
-    sendChatData,
   } = useMeeting({
     meetingId,
   });
@@ -50,7 +49,7 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
           {currentUsers.length === 0 && <NoUsers />}
           <Notifications />
         </div>
-        <Chat sendChatData={sendChatData} />
+        <Chat />
       </div>
       <LinkCopy />
       <ModalEnterName isOpen={isModalAlertNameOpen} />

@@ -1,5 +1,7 @@
 'use client';
 
+import { ChatProvider } from './ChatProvider';
+import { ConnectionProvider } from './ConnectionProvider';
 import { Meeting } from './Meeting';
 import { MeetingProvider } from './MeetingProvider';
 
@@ -9,8 +11,12 @@ type MeetingPageProps = {
 
 export const MeetingPage = ({ meetingId }: MeetingPageProps) => {
   return (
-    <MeetingProvider>
-      <Meeting meetingId={meetingId} />
-    </MeetingProvider>
+    <ConnectionProvider>
+      <MeetingProvider>
+        <ChatProvider>
+          <Meeting meetingId={meetingId} />
+        </ChatProvider>
+      </MeetingProvider>
+    </ConnectionProvider>
   );
 };

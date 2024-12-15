@@ -3,12 +3,14 @@ import { ChatBubbleOvalLeftEllipsisIcon, ComputerDesktopIcon, MicrophoneIcon, Vi
 import { Button } from '@nextui-org/react';
 import { useRouter } from 'next/navigation';
 import { useContext } from 'react';
+import { ChatContext } from './ChatProvider';
 import { MeetingContext } from './MeetingProvider';
 import { useMedia } from './use-media';
 
 export const MeetingBar = () => {
   const { socket } = useContext(SocketIoContext);
-  const { properties, setProperties } = useContext(MeetingContext);
+  const { setIsChatVisible } = useContext(ChatContext);
+  const { userProperties, setUserProperties } = useContext(MeetingContext);
   const { disableShareScreen } = useMedia();
   const router = useRouter();
 
@@ -23,15 +25,15 @@ export const MeetingBar = () => {
         <div className="flex w-1/2 justify-center">
           <button
             className="flex flex-col items-center justify-center space-y-1"
-            onClick={setProperties.bind(null, 'audio', !properties.audio)}
+            onClick={setUserProperties.bind(null, 'audio', !userProperties.audio)}
           >
-            {properties.audio && (
+            {userProperties.audio && (
               <>
                 <MicrophoneIcon className="h-8 w-8 text-green-500" />
                 <div className="text-nowrap">Mute Audio</div>
               </>
             )}
-            {!properties.audio && (
+            {!userProperties.audio && (
               <>
                 <MicrophoneIcon className="h-8 w-8 text-red-500" />
                 <div className="text-nowrap">Join Audio</div>
@@ -42,15 +44,15 @@ export const MeetingBar = () => {
         <div className="flex w-1/2 justify-center">
           <button
             className="flex flex-col items-center justify-center space-y-1"
-            onClick={setProperties.bind(null, 'video', !properties.video)}
+            onClick={setUserProperties.bind(null, 'video', !userProperties.video)}
           >
-            {properties.video && (
+            {userProperties.video && (
               <>
                 <VideoCameraIcon className="h-8 w-8 text-green-500" />
                 <div className="text-nowrap">Stop Video</div>
               </>
             )}
-            {!properties.video && (
+            {!userProperties.video && (
               <>
                 <VideoCameraIcon className="h-8 w-8 text-red-500" />
                 <div className="text-nowrap">Start Video</div>
@@ -61,7 +63,7 @@ export const MeetingBar = () => {
       </div>
       <div className="flex flex-1 justify-center space-x-4">
         <div className="flex w-1/2 justify-center sm:w-auto">
-          <button className="flex flex-col items-center justify-center space-y-1" onClick={setProperties.bind(null, 'chat', true)}>
+          <button className="flex flex-col items-center justify-center space-y-1" onClick={setIsChatVisible.bind(null, true)}>
             <ChatBubbleOvalLeftEllipsisIcon className="h-8 w-8" />
             <span>Chat</span>
           </button>
@@ -70,15 +72,15 @@ export const MeetingBar = () => {
           <div className="flex w-1/2 justify-center sm:w-auto">
             <button
               className="flex flex-col items-center justify-center space-y-1"
-              onClick={setProperties.bind(null, 'shareScreen', !properties.shareScreen)}
+              onClick={setUserProperties.bind(null, 'shareScreen', !userProperties.shareScreen)}
             >
-              {properties.shareScreen && (
+              {userProperties.shareScreen && (
                 <>
                   <ComputerDesktopIcon className="h-8 w-8 text-green-500" />
                   <div className="text-nowrap">Stop Share</div>
                 </>
               )}
-              {!properties.shareScreen && (
+              {!userProperties.shareScreen && (
                 <>
                   <ComputerDesktopIcon className="h-8 w-8" />
                   <div className="text-nowrap">Share Screen</div>

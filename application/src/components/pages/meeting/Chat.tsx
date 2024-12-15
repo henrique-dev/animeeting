@@ -1,40 +1,23 @@
 import { SocketIoContext } from '@/providers/SocketIoProvider';
 import { PaperAirplaneIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Button, Textarea } from '@nextui-org/react';
-import { useContext, useState } from 'react';
-import { MeetingContext } from './MeetingProvider';
+import { useContext } from 'react';
+import { ChatContext } from './ChatProvider';
+import { useChat } from './use-chat';
 
-type ChatProps = {
-  sendChatData: (data: string) => void;
-};
-
-export const Chat = ({ sendChatData }: ChatProps) => {
+export const Chat = () => {
   const { userId } = useContext(SocketIoContext);
-  const { userName, properties, messages, setMessages, setProperties } = useContext(MeetingContext);
-  const [messageToSend, setMessageToSend] = useState('');
+  const { isChatVisible, messages, setIsChatVisible } = useContext(ChatContext);
+  const { messageToSend, setMessageToSend, sendMessage, onKeyDownHandler } = useChat();
 
-  const sendMessage = () => {
-    sendChatData(JSON.stringify({ from: userName, message: messageToSend, userId }));
-    setMessages((oldMessages) => [...oldMessages, { from: '', message: messageToSend, userId }]);
-    setMessageToSend('');
-  };
-
-  const onKeyDownHandler = (event: React.KeyboardEvent) => {
-    if (event.code === 'Enter' && !event.shiftKey && messageToSend.trim() !== '') {
-      event.preventDefault();
-
-      sendMessage();
-    }
-  };
-
-  if (!properties.chat) return undefined;
+  if (!isChatVisible) return undefined;
 
   const disableSendMessage = messageToSend.trim() === '';
 
   return (
     <div className="absolute z-20 flex h-full w-full flex-col bg-zinc-900 sm:static sm:z-0 sm:w-96">
       <div className="flex justify-end p-2">
-        <Button isIconOnly color="danger" onPress={setProperties.bind(null, 'chat', false)}>
+        <Button isIconOnly color="danger" onPress={setIsChatVisible.bind(null, false)}>
           <XMarkIcon className="h-5 w-5" />
         </Button>
       </div>

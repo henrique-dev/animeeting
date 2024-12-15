@@ -1,19 +1,13 @@
 import { SocketIoContext } from '@/providers/SocketIoProvider';
 import { useRouter } from 'next/navigation';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { ChatContext } from './ChatProvider';
+import { ConnectionContext } from './ConnectionProvider';
 import { MeetingContext } from './MeetingProvider';
 
 export type UserType = {
   id: string;
   name: string;
-};
-
-export type UserConnectionMapType = {
-  peerConnection: RTCPeerConnection;
-  stream: MediaStream;
-  appDataChannel: RTCDataChannel;
-  chatDataChannel: RTCDataChannel;
-  state: 'idle' | 'created';
 };
 
 const peerConfiguration = {
@@ -30,8 +24,9 @@ type UseConnectionsProps = {
 
 export const useConnections = ({ meetingId }: UseConnectionsProps) => {
   const { socket, isConnected, userId } = useContext(SocketIoContext);
-  const { onDataAppReceived, onDataChatReceived } = useContext(MeetingContext);
-  const userConnectionsMapRef = useRef<Map<string, UserConnectionMapType>>(new Map());
+  const { userConnectionsMapRef } = useContext(ConnectionContext);
+  const { onDataAppReceived } = useContext(MeetingContext);
+  const { onDataChatReceived } = useContext(ChatContext);
   const localStreamRef = useRef<MediaStream>(null);
   const [currentUsers, setCurrentUsers] = useState<UserType[]>([]);
   const router = useRouter();
@@ -40,13 +35,7 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
     userConnectionsMapRef.current.forEach((connection) => {
       connection.appDataChannel.send(data);
     });
-  }, []);
-
-  const sendChatData = useCallback((data: string) => {
-    userConnectionsMapRef.current.forEach((connection) => {
-      connection.chatDataChannel.send(data);
-    });
-  }, []);
+  }, [userConnectionsMapRef]);
 
   const onUserLeave = useCallback(
     (user: UserType) => {
@@ -54,7 +43,7 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
 
       setCurrentUsers((oldUsers) => oldUsers.filter((oldUser) => oldUser.id !== user.id));
     },
-    [setCurrentUsers]
+    [userConnectionsMapRef, setCurrentUsers]
   );
 
   const onUserEnter = useCallback(
@@ -116,7 +105,7 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
 
       setCurrentUsers(() => users.filter((userToFilter) => userToFilter.id !== userId));
     },
-    [socket, userId, meetingId, setCurrentUsers, onDataAppReceived, onDataChatReceived, onUserLeave]
+    [userConnectionsMapRef, socket, userId, meetingId, setCurrentUsers, onDataAppReceived, onDataChatReceived, onUserLeave]
   );
 
   const onCreateOffer = useCallback(
@@ -138,7 +127,7 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
 
       socket?.emit('offer', { meetingId, toId: peerId, offer: offerDescription });
     },
-    [socket, meetingId]
+    [userConnectionsMapRef, socket, meetingId]
   );
 
   const onCreateAnswer = useCallback(
@@ -160,31 +149,40 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
 
       socket?.emit('answer', { meetingId, toId: peerId, answer: answerDescription });
     },
-    [socket, meetingId]
+    [userConnectionsMapRef, socket, meetingId]
   );
 
-  const onAnswerFound = useCallback((peerId: string, answer: RTCSessionDescriptionInit) => {
-    const userConnection = userConnectionsMapRef.current.get(peerId);
+  const onAnswerFound = useCallback(
+    (peerId: string, answer: RTCSessionDescriptionInit) => {
+      const userConnection = userConnectionsMapRef.current.get(peerId);
 
-    if (!userConnection) return;
+      if (!userConnection) return;
 
-    const answerDescription = new RTCSessionDescription(answer);
-    userConnection.peerConnection.setRemoteDescription(answerDescription);
-  }, []);
+      const answerDescription = new RTCSessionDescription(answer);
+      userConnection.peerConnection.setRemoteDescription(answerDescription);
+    },
+    [userConnectionsMapRef]
+  );
 
-  const onOfferCandidate = useCallback((peerId: string, data: RTCIceCandidateInit) => {
-    const userConnection = userConnectionsMapRef.current.get(peerId);
+  const onOfferCandidate = useCallback(
+    (peerId: string, data: RTCIceCandidateInit) => {
+      const userConnection = userConnectionsMapRef.current.get(peerId);
 
-    const candidate = new RTCIceCandidate(data);
-    userConnection?.peerConnection.addIceCandidate(candidate);
-  }, []);
+      const candidate = new RTCIceCandidate(data);
+      userConnection?.peerConnection.addIceCandidate(candidate);
+    },
+    [userConnectionsMapRef]
+  );
 
-  const onAnswerCandidate = useCallback((peerId: string, data: RTCIceCandidateInit) => {
-    const userConnection = userConnectionsMapRef.current.get(peerId);
+  const onAnswerCandidate = useCallback(
+    (peerId: string, data: RTCIceCandidateInit) => {
+      const userConnection = userConnectionsMapRef.current.get(peerId);
 
-    const candidate = new RTCIceCandidate(data);
-    userConnection?.peerConnection.addIceCandidate(candidate);
-  }, []);
+      const candidate = new RTCIceCandidate(data);
+      userConnection?.peerConnection.addIceCandidate(candidate);
+    },
+    [userConnectionsMapRef]
+  );
 
   const onInvalidMeeting = useCallback(() => {
     router.push('/meetings');
@@ -241,5 +239,5 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
     onInvalidMeeting,
   ]);
 
-  return { currentUsers, localStreamRef, userConnectionsMapRef, sendAppData, sendChatData };
+  return { currentUsers, localStreamRef, userConnectionsMapRef, sendAppData };
 };
