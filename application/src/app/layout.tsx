@@ -1,4 +1,3 @@
-import { Layout } from '@/components/layout';
 import { DefaultProvider } from '@/providers/DefaultProvider';
 import ThemeProvider from '@/providers/ThemeProvider';
 import type { Metadata } from 'next';
@@ -38,9 +37,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
       <CustomDocument locale={locale}>
         <body className={twJoin(geistSans.variable, geistMono.variable, 'h-full antialiased')}>
           <NextIntlClientProvider timeZone={timezone} locale={locale} messages={messages}>
-            <DefaultProvider>
-              <Layout>{children}</Layout>
-            </DefaultProvider>
+            <DefaultProvider>{children}</DefaultProvider>
           </NextIntlClientProvider>
         </body>
       </CustomDocument>

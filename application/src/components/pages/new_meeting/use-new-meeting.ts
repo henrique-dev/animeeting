@@ -2,25 +2,25 @@
 
 import { SocketIoContext } from '@/providers/SocketIoProvider';
 import { useRouter } from 'next/navigation';
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useMedia } from '../use-media';
-
-type DeviceType = {
-  id: string;
-  name: string;
-};
 
 export const useNewMeeting = () => {
   const { socket } = useContext(SocketIoContext);
+  const {
+    audioDevices,
+    videoDevices,
+    selectedAudioDevice,
+    selectedVideoDevice,
+    setSelectedAudioDevice,
+    setSelectedVideoDevice,
+    retrieveMediaDevices,
+    getUserMedia,
+  } = useMedia();
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const mediaStreamRef = useRef<MediaStream>(null);
   const [mediaAllowed, setMediaAllowed] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [videoDevices, setVideoDevices] = useState<DeviceType[]>([]);
-  const [audioDevices, setAudioDevices] = useState<DeviceType[]>([]);
-  const [selectedAudioDevice, setSelectedAudioDevice] = useState('');
-  const [selectedVideoDevice, setSelectedVideoDevice] = useState('');
-  const { getUserMedia, getDevices } = useMedia();
   const [name, setName] = useState('');
   const router = useRouter();
 
@@ -49,7 +49,7 @@ export const useNewMeeting = () => {
 
   const selectedAudioDeviceHandler = (event: React.ChangeEvent<HTMLSelectElement>) => {
     getUserMedia({
-      video: true,
+      video: { deviceId: { exact: selectedVideoDevice } },
       audio: { deviceId: { exact: event.target.value } },
     })
       .then((stream) => {
@@ -66,7 +66,7 @@ export const useNewMeeting = () => {
   const selectedVideoDeviceHandler = (event: React.ChangeEvent<HTMLSelectElement>) => {
     getUserMedia({
       video: { deviceId: { exact: event.target.value } },
-      audio: true,
+      audio: { deviceId: { exact: selectedAudioDevice } },
     })
       .then((stream) => {
         mediaStreamRef.current = stream;
@@ -79,45 +79,6 @@ export const useNewMeeting = () => {
       });
   };
 
-  const getMediaDevices = useCallback(() => {
-    getDevices()
-      .then((devices) => {
-        const audioDevicesFound = devices
-          .filter((device) => device.kind === 'audioinput')
-          .map((device) => ({
-            id: device.deviceId,
-            name: device.label,
-          }));
-
-        const videoDevicesFound = devices
-          .filter((device) => device.kind === 'videoinput')
-          .map((device) => ({
-            id: device.deviceId,
-            name: device.label,
-          }));
-
-        if (audioDevicesFound.find((device) => device.id === 'default')) {
-          setSelectedAudioDevice('default');
-        } else if (audioDevicesFound.length > 0) {
-          setSelectedAudioDevice(audioDevicesFound[0].id);
-        }
-
-        if (videoDevicesFound.find((device) => device.id === 'default')) {
-          setSelectedVideoDevice('default');
-        } else if (videoDevicesFound.length > 0) {
-          setSelectedVideoDevice(videoDevicesFound[0].id);
-        }
-
-        setAudioDevices(audioDevicesFound);
-        setVideoDevices(videoDevicesFound);
-      })
-      .catch((err) => {
-        console.warn('cannot get the devices');
-        console.warn(err);
-        setMediaAllowed(false);
-      });
-  }, [getDevices]);
-
   useEffect(() => {
     getUserMedia({
       video: true,
@@ -127,7 +88,12 @@ export const useNewMeeting = () => {
         mediaStreamRef.current = stream;
         setMediaAllowed(true);
         setName(localStorage.getItem('name') ?? '');
-        getMediaDevices();
+
+        retrieveMediaDevices(true).catch((err) => {
+          setMediaAllowed(false);
+          console.warn('cannot get the user devices');
+          console.warn(err);
+        });
       })
       .catch((err) => {
         setMediaAllowed(false);
@@ -152,7 +118,7 @@ export const useNewMeeting = () => {
         track.stop();
       });
     };
-  }, [setMediaAllowed, getMediaDevices]);
+  }, [setMediaAllowed, getUserMedia, retrieveMediaDevices]);
 
   return {
     isSubmitting,

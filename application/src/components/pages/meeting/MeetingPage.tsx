@@ -2,6 +2,7 @@
 
 import { ChatProvider } from './ChatProvider';
 import { ConnectionProvider } from './ConnectionProvider';
+import { MediaProvider } from './MediaProvider';
 import { Meeting } from './Meeting';
 import { MeetingProvider } from './MeetingProvider';
 
@@ -11,12 +12,14 @@ type MeetingPageProps = {
 
 export const MeetingPage = ({ meetingId }: MeetingPageProps) => {
   return (
-    <ConnectionProvider>
-      <MeetingProvider>
-        <ChatProvider>
-          <Meeting meetingId={meetingId} />
-        </ChatProvider>
-      </MeetingProvider>
-    </ConnectionProvider>
+    <MediaProvider>
+      <ConnectionProvider>
+        <MeetingProvider>
+          <ChatProvider>
+            <Meeting meetingId={meetingId} />
+          </ChatProvider>
+        </MeetingProvider>
+      </ConnectionProvider>
+    </MediaProvider>
   );
 };

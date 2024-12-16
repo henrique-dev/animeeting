@@ -6,15 +6,14 @@ import {
   MicrophoneIcon,
   VideoCameraIcon,
 } from '@heroicons/react/24/outline';
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@nextui-org/react';
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, SharedSelection } from '@nextui-org/react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useContext } from 'react';
 import { twJoin } from 'tailwind-merge';
+import { DeviceType, useMedia } from '../use-media';
 import { ChatContext } from './ChatProvider';
 import { MeetingContext } from './MeetingProvider';
-import { useMedia } from '../use-media';
-import { DeviceType } from './use-meeting';
 
 type MeetingBarProps = {
   audioDevices: DeviceType[];
@@ -22,8 +21,8 @@ type MeetingBarProps = {
   toggleShareScreen: () => void;
   enableVideo: (enabled: boolean) => void;
   enableAudio: (enabled: boolean) => void;
-  changeAudioDevice: (deviceId: string) => void;
-  changeVideoDevice: (deviceId: string) => void;
+  changeAudioDevice: (selection: SharedSelection) => void;
+  changeVideoDevice: (selection: SharedSelection) => void;
 };
 
 export const MeetingBar = ({
@@ -72,16 +71,10 @@ export const MeetingBar = ({
                   <ChevronUpIcon className="h-5 w-5" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu
-                selectedKeys={[userProperties.audioDevice]}
-                selectionMode="single"
-                onSelectionChange={(selection) => {
-                  selection.currentKey && changeAudioDevice(selection.currentKey);
-                }}
-              >
-                {audioDevices.map((device) => {
-                  return <DropdownItem key={device.id}>{device.name}</DropdownItem>;
-                })}
+              <DropdownMenu selectedKeys={[userProperties.audioDevice]} selectionMode="single" onSelectionChange={changeAudioDevice}>
+                {audioDevices.map((device) => (
+                  <DropdownItem key={device.id}>{device.name}</DropdownItem>
+                ))}
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -106,13 +99,7 @@ export const MeetingBar = ({
                   <ChevronUpIcon className="h-5 w-5" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu
-                selectedKeys={[userProperties.videoDevice]}
-                selectionMode="single"
-                onSelectionChange={(selection) => {
-                  selection.currentKey && changeVideoDevice(selection.currentKey);
-                }}
-              >
+              <DropdownMenu selectedKeys={[userProperties.videoDevice]} selectionMode="single" onSelectionChange={changeVideoDevice}>
                 {videoDevices.map((device) => (
                   <DropdownItem key={device.id}>{device.name}</DropdownItem>
                 ))}

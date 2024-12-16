@@ -1,10 +1,11 @@
 import { SocketIoContext } from '@/providers/SocketIoProvider';
 import { useRouter } from 'next/navigation';
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
+import { useMedia } from '../use-media';
 import { ChatContext } from './ChatProvider';
 import { ConnectionContext } from './ConnectionProvider';
+import { MediaContext } from './MediaProvider';
 import { MeetingContext } from './MeetingProvider';
-import { useMedia } from '../use-media';
 
 export type UserType = {
   id: string;
@@ -28,7 +29,7 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
   const { userConnectionsMapRef } = useContext(ConnectionContext);
   const { onDataAppReceived } = useContext(MeetingContext);
   const { onDataChatReceived, onDataFileReceived } = useContext(ChatContext);
-  const localStreamRef = useRef<MediaStream>(null);
+  const { localStreamRef } = useContext(MediaContext);
   const [currentUsers, setCurrentUsers] = useState<UserType[]>([]);
   const { getUserMedia } = useMedia();
   const router = useRouter();
@@ -134,6 +135,7 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
       setCurrentUsers(() => users.filter((userToFilter) => userToFilter.id !== userId));
     },
     [
+      localStreamRef,
       userConnectionsMapRef,
       socket,
       userId,
@@ -277,5 +279,5 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
     onInvalidMeeting,
   ]);
 
-  return { currentUsers, localStreamRef, userConnectionsMapRef, updateLocalStream };
+  return { currentUsers, userConnectionsMapRef, updateLocalStream };
 };
