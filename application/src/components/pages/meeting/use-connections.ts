@@ -26,7 +26,7 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
   const { socket, isConnected, userId } = useContext(SocketIoContext);
   const { userConnectionsMapRef } = useContext(ConnectionContext);
   const { onDataAppReceived } = useContext(MeetingContext);
-  const { onDataChatReceived } = useContext(ChatContext);
+  const { onDataChatReceived, onDataFileReceived } = useContext(ChatContext);
   const localStreamRef = useRef<MediaStream>(null);
   const [currentUsers, setCurrentUsers] = useState<UserType[]>([]);
   const router = useRouter();
@@ -61,35 +61,33 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
           });
         };
 
-        peerConnection.ondatachannel = (event) => {
-          const dataChannel = event.channel;
-
-          if (dataChannel.label === 'app') {
-            dataChannel.onmessage = (channelEvent) => {
-              onDataAppReceived(user.id, channelEvent);
-            };
-          }
-
-          if (dataChannel.label === 'chat') {
-            dataChannel.onmessage = (channelEvent) => {
-              onDataChatReceived(user.id, channelEvent);
-            };
-          }
-        };
-
         peerConnection.onconnectionstatechange = () => {
           if (peerConnection.connectionState === 'disconnected') {
             onUserLeave(user);
           }
         };
 
-        const appDataChannel = peerConnection.createDataChannel('app');
-        const chatDataChannel = peerConnection.createDataChannel('chat');
+        const appDataChannel = peerConnection.createDataChannel('app', { negotiated: true, id: 0 });
+        const chatDataChannel = peerConnection.createDataChannel('chat', { negotiated: true, id: 1 });
+        const fileDataChannel = peerConnection.createDataChannel('file', { negotiated: true, id: 2 });
+
+        appDataChannel.onmessage = (channelEvent) => {
+          onDataAppReceived(user.id, channelEvent);
+        };
+
+        chatDataChannel.onmessage = (channelEvent) => {
+          onDataChatReceived(user.id, channelEvent);
+        };
+
+        fileDataChannel.onmessage = (channelEvent) => {
+          onDataFileReceived(user.id, channelEvent);
+        };
 
         userConnectionsMapRef.current.set(user.id, {
           peerConnection: peerConnection,
           appDataChannel,
           chatDataChannel,
+          fileDataChannel,
           stream: remoteStream,
           state: 'idle',
         });
@@ -99,7 +97,17 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
 
       setCurrentUsers(() => users.filter((userToFilter) => userToFilter.id !== userId));
     },
-    [userConnectionsMapRef, socket, userId, meetingId, setCurrentUsers, onDataAppReceived, onDataChatReceived, onUserLeave]
+    [
+      userConnectionsMapRef,
+      socket,
+      userId,
+      meetingId,
+      setCurrentUsers,
+      onUserLeave,
+      onDataAppReceived,
+      onDataChatReceived,
+      onDataFileReceived,
+    ]
   );
 
   const onCreateOffer = useCallback(

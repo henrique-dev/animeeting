@@ -8,7 +8,6 @@ import { Notifications } from './Notifications';
 import { NoUsers } from './NoUsers';
 import { useMeeting } from './use-meeting';
 import { UsersVideoShow } from './UsersVideoShow';
-import { UserVideoShow } from './UserVideoShow';
 
 type MeetingProps = {
   meetingId: string;
@@ -23,8 +22,8 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
     localVideoElementMediaStreamRefHandler,
     remoteVideoElementRefHandler,
     toggleShareScreen,
-    toggleVideo,
-    toggleAudio,
+    enableVideo,
+    enableAudio,
   } = useMeeting({
     meetingId,
   });
@@ -38,18 +37,13 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
             'bg-gradient-to-t from-zinc-900 to-zinc-800 to-10%'
           )}
         >
+          {currentUsers.length === 0 && <NoUsers />}
           <UsersVideoShow
-            users={currentUsers}
-            localVideoElementRefHandler={localVideoElementRefHandler}
-            remoteVideoElementRefHandler={remoteVideoElementRefHandler}
-          />
-          <UserVideoShow
             users={currentUsers}
             localVideoElementRefHandler={localVideoElementRefHandler}
             localVideoElementMediaStreamRefHandler={localVideoElementMediaStreamRefHandler}
             remoteVideoElementRefHandler={remoteVideoElementRefHandler}
           />
-          {currentUsers.length === 0 && <NoUsers />}
           <Notifications />
         </div>
         <Chat />
@@ -57,7 +51,7 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
       <LinkCopy />
       <ModalEnterName isOpen={isModalAlertNameOpen} />
       <ModalRequireMedia isOpen={isModalRequireCameraNameOpen} />
-      <MeetingBar toggleShareScreen={toggleShareScreen} toggleVideo={toggleVideo} toggleAudio={toggleAudio} />
+      <MeetingBar toggleShareScreen={toggleShareScreen} enableVideo={enableVideo} enableAudio={enableAudio} />
     </div>
   );
 };

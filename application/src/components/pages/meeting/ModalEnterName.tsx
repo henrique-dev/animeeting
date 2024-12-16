@@ -1,4 +1,5 @@
 import { Button, Input, Modal, ModalBody, ModalContent, ModalHeader, useDisclosure } from '@nextui-org/react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useContext, useState } from 'react';
 import { MeetingContext } from './MeetingProvider';
@@ -14,6 +15,7 @@ export const ModalEnterName = ({ isOpen: isOpenDefault }: ModalEnterNameProps) =
     isOpen: isOpenDefault,
   });
   const router = useRouter();
+  const t = useTranslations();
 
   const submitHandler = () => {
     localStorage.setItem('name', name);
@@ -28,16 +30,16 @@ export const ModalEnterName = ({ isOpen: isOpenDefault }: ModalEnterNameProps) =
         <ModalContent>
           {() => (
             <>
-              <ModalHeader className="flex flex-col gap-1">Enter your name</ModalHeader>
+              <ModalHeader className="flex flex-col gap-1">{t('pages.meeting.modal_enter_name.enter_your_name')}</ModalHeader>
               <ModalBody className="py-4">
-                <p>Do you need give a name to enter in the meeting</p>
+                <div>{t('pages.meeting.modal_enter_name.need_name')}</div>
                 <div className="flex w-full flex-col space-y-2">
-                  <Input label="Name" value={name} onValueChange={setName} />
+                  <Input label={t('pages.meeting.modal_enter_name.name')} value={name} onValueChange={setName} />
                   <Button color="primary" onPress={submitHandler} isDisabled={disableSubmit}>
-                    Enter meeting
+                    {t('pages.meeting.modal_enter_name.start_meeting')}
                   </Button>
                   <Button onPress={router.push.bind(null, '/meetings', {})} color="secondary">
-                    Exit
+                    {t('pages.meeting.modal_enter_name.exit')}
                   </Button>
                 </div>
               </ModalBody>

@@ -6,7 +6,7 @@ import { io, Socket } from 'socket.io-client';
 
 type SocketIoContextProps = {
   userId: string;
-  isConnected: boolean;
+  isConnected: boolean | null;
   transport: string;
   socket: Socket<DefaultEventsMap, DefaultEventsMap> | null;
 };
@@ -25,7 +25,7 @@ type SocketIoProviderProps = {
 export const SocketIoProvider = ({ children }: SocketIoProviderProps) => {
   const [userId, setUserId] = useState('');
   const [socket, setSocket] = useState<Socket<DefaultEventsMap, DefaultEventsMap> | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [transport, setTransport] = useState('N/A');
 
   const onConnect = useCallback(() => {

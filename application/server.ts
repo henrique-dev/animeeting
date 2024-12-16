@@ -115,7 +115,7 @@ app.prepare().then(() => {
     connectionPairs.get(id)?.set(anotherId, pairData);
   };
 
-  const remoteUserFromMeeting = (userId: string) => {
+  const removeUserFromMeeting = (userId: string) => {
     meetings.forEach((meeting) => {
       if (meeting.users.has(userId)) {
         const connectionPairs = meeting.connectionPairs;
@@ -202,7 +202,7 @@ app.prepare().then(() => {
 
       if (!user) return;
 
-      remoteUserFromMeeting(user.id);
+      removeUserFromMeeting(user.id);
     });
 
     socket.on('decide-offer-answer', (data) => {
@@ -337,7 +337,7 @@ app.prepare().then(() => {
 
       if (!user) return;
 
-      remoteUserFromMeeting(user.id);
+      removeUserFromMeeting(user.id);
 
       deleteUser(socket.id);
     });

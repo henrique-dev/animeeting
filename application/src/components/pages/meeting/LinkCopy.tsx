@@ -1,9 +1,11 @@
 import { ClipboardDocumentIcon, LinkIcon } from '@heroicons/react/24/outline';
 import { Button, Input, Popover, PopoverContent, PopoverTrigger } from '@nextui-org/react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 export const LinkCopy = () => {
   const [location, setLocation] = useState('');
+  const t = useTranslations();
 
   useEffect(() => {
     setLocation(window.location.href);
@@ -20,12 +22,12 @@ export const LinkCopy = () => {
           <PopoverTrigger>
             <Button>
               <LinkIcon className="h-5 w-5 text-white" />
-              Meeting link
+              {t('pages.meeting.link_copy.meeting_link')}
             </Button>
           </PopoverTrigger>
           <PopoverContent>
             <div className="space-y-2 px-1 py-2">
-              <div className="text-small font-bold">You can copy the link below and share with others</div>
+              <div className="text-small font-bold">{t('pages.meeting.link_copy.you_can_copy')}</div>
               <div className="flex space-x-2">
                 <Input className="flex-1" value={location} disabled />
                 <Button isIconOnly onPress={copyToClipboardHandler}>

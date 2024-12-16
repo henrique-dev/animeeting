@@ -1,7 +1,7 @@
-import { SelectModePage } from '@/components/pages/select_mode';
+import { HomePage } from '@/components/pages/home';
 
 const Page = () => {
-  return <SelectModePage />;
+  return <HomePage />;
 };
 
 export default Page;

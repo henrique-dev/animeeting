@@ -79,13 +79,23 @@ export const MeetingProvider = ({ children }: MeetingProviderProps) => {
 
   const onDataAppReceived = useCallback(
     (userId: string, event: MessageEvent) => {
-      switch (event.data) {
+      const params = JSON.parse(event.data);
+
+      switch (params.code) {
         case 'start_sharing_screen':
           changeMeetingPropertiesHandler('userInFocusId', userId);
           break;
         case 'stop_sharing_screen':
-          changeMeetingPropertiesHandler('userInFocusId', undefined);
-          break;
+          setMeetingProperties((oldState) => {
+            if (oldState.userInFocusId === userId) {
+              return {
+                ...oldState,
+                userInFocusId: undefined,
+              };
+            }
+
+            return { ...oldState };
+          });
       }
     },
     [changeMeetingPropertiesHandler]

@@ -11,8 +11,8 @@ type UseMeetingProps = {
 };
 
 export const useMeeting = ({ meetingId }: UseMeetingProps) => {
-  const { socket } = useContext(SocketIoContext);
-  const { userName, userProperties, setUserProperties, setUserName } = useContext(MeetingContext);
+  const { socket, userId } = useContext(SocketIoContext);
+  const { userName, userProperties, meetingProperties, setUserProperties, setMeetingProperties, setUserName } = useContext(MeetingContext);
   const { sendAppData } = useContext(ConnectionContext);
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const { currentUsers, localStreamRef, userConnectionsMapRef } = useConnections({
@@ -22,7 +22,7 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
   const { getUserMedia, getDisplayMedia } = useMedia();
   const { isModalAlertNameOpen, isModalRequireCameraNameOpen, setIsModalAlertNameOpen, setIsModalRequireCameraNameOpen } = useAlertModal();
 
-  const initMeeting = useCallback(() => {
+  const startMeeting = useCallback(() => {
     if (!userName || userName.trim() === '') {
       setIsModalAlertNameOpen(true);
       return;
@@ -70,7 +70,7 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
 
   const localVideoElementRefHandler = (videoElement: HTMLVideoElement | null) => {
     if (videoElement) {
-      if (!videoElement.srcObject && localStreamRef.current) {
+      if (videoElement.srcObject !== localStreamRef.current) {
         videoElement.srcObject = localStreamRef.current;
       }
 
@@ -80,7 +80,7 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
 
   const localVideoElementMediaStreamRefHandler = (videoElement: HTMLVideoElement | null) => {
     if (videoElement) {
-      if (!videoElement.srcObject && localMediaStreamRef.current) {
+      if (videoElement.srcObject !== localMediaStreamRef.current) {
         videoElement.srcObject = localMediaStreamRef.current;
       }
     }
@@ -96,6 +96,26 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
         videoElement.srcObject = userConnection.stream;
       }
     }
+  };
+
+  const enableVideo = (enabled: boolean) => {
+    localStreamRef.current?.getTracks().forEach((track) => {
+      if (track.kind === 'video') {
+        track.enabled = enabled;
+      }
+    });
+
+    setUserProperties('video', enabled);
+  };
+
+  const enableAudio = (enabled: boolean) => {
+    localStreamRef.current?.getTracks().forEach((track) => {
+      if (track.kind === 'audio') {
+        track.enabled = enabled;
+      }
+    });
+
+    setUserProperties('audio', enabled);
   };
 
   const stopShareScreen = useCallback(() => {
@@ -118,9 +138,9 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
       track.stop();
     });
 
-    sendAppData('stop_sharing_screen');
-    setUserProperties('shareScreen', false);
     localMediaStreamRef.current = null;
+    sendAppData({ code: 'stop_sharing_screen' });
+    setUserProperties('shareScreen', false);
   }, [userConnectionsMapRef, localStreamRef, sendAppData, setUserProperties]);
 
   const startShareScreen = useCallback(() => {
@@ -150,9 +170,10 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
           };
         });
 
-        sendAppData('start_sharing_screen');
-        setUserProperties('shareScreen', true);
         localMediaStreamRef.current = mediaStream;
+        sendAppData({ code: 'start_sharing_screen' });
+        setUserProperties('shareScreen', true);
+        setMeetingProperties('userInFocusId', userId);
       })
       .catch((err) => {
         console.warn('cannot share the screen');
@@ -160,43 +181,26 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
 
         setUserProperties('shareScreen', false);
       });
-  }, [userConnectionsMapRef, getDisplayMedia, setUserProperties, stopShareScreen, sendAppData]);
+  }, [userConnectionsMapRef, userId, getDisplayMedia, setUserProperties, setMeetingProperties, stopShareScreen, sendAppData]);
 
   const toggleShareScreen = () => {
     if (userProperties.shareScreen) {
       stopShareScreen();
+      if (meetingProperties.userInFocusId === userId) {
+        setMeetingProperties('userInFocusId', undefined);
+      }
     } else {
       startShareScreen();
     }
   };
 
-  const toggleVideo = () => {
-    localStreamRef.current?.getTracks().forEach((track) => {
-      if (track.kind === 'video') {
-        track.enabled = !userProperties.video;
-      }
-    });
-
-    setUserProperties('video', !userProperties.video);
-  };
-
-  const toggleAudio = () => {
-    localStreamRef.current?.getTracks().forEach((track) => {
-      if (track.kind === 'audio') {
-        track.enabled = !userProperties.audio;
-      }
-    });
-
-    setUserProperties('audio', !userProperties.audio);
-  };
-
   useEffect(() => {
-    initMeeting();
+    startMeeting();
 
     return () => {
       finishMeeting();
     };
-  }, [initMeeting, finishMeeting]);
+  }, [startMeeting, finishMeeting]);
 
   return {
     isModalAlertNameOpen,
@@ -206,7 +210,7 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
     localVideoElementMediaStreamRefHandler,
     remoteVideoElementRefHandler,
     toggleShareScreen,
-    toggleVideo,
-    toggleAudio,
+    enableVideo,
+    enableAudio,
   };
 };

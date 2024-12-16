@@ -1,1 +1,69 @@
-{}
+{
+  "pages": {
+    "home": {
+      "home_page": {
+        "title": "Uma maneira direta de fazer reunioes",
+        "description": "Utilizando como base o Web RTC, as reunioes sao feitas diretamente entre as maquinas, permitindo menos delay duarnte a conversa. Aproveite chamadas de video, audio e troca de mensagens e arquivos.",
+        "new_meeting": "Nova reunião"
+      }
+    },
+    "new_meeting": {
+      "new_meeting_page": {
+        "need_to_allow_media": "Voce precisa fornecer permissao para acessar a midia",
+        "name": "Nome",
+        "start_meeting": "Iniciar reuniao",
+        "back": "Voltar"
+      }
+    },
+    "meeting": {
+      "chat": {
+        "you": "Voce"
+      },
+      "link_copy": {
+        "meeting_link": "Link da reuniao",
+        "you_can_copy": "Voce pode copiar o link abaixo e compartilhar com outros"
+      },
+      "meeting_bar": {
+        "stop_audio": "Desativar",
+        "start_audio": "Ativar",
+        "stop_video": "Desativar",
+        "start_video": "Ativar",
+        "chat": "Conversa",
+        "start_share_Screen": "Compartilhar tela",
+        "stop_share_screen": "Parar de compartilhar",
+        "leave": "Sair"
+      },
+      "modal_enter_name": {
+        "enter_your_name": "Insira um nome",
+        "need_name": "Voce precisa fornecer um nome para entrar na reuniao",
+        "name": "Nome",
+        "start_meeting": "Entrar na reuniao",
+        "exit": "Sair"
+      },
+      "modal_require_media": {
+        "cannot_access_media": "Nao foi possivel acessar a midia",
+        "need_permission": "Voce precisa fornecer permissao para acessar a midia para poder entrar na reuniao",
+        "exit": "Sair"
+      },
+      "notifications": {
+        "cannot_connect_to_server": "Nao foi possivel se conectar ao servidor no momento",
+        "disconnected": "Desconectado",
+        "audio_disabled": "Seu audio esta desabilitado",
+        "video_disabled": "Seu video esta desabilitado",
+        "sharing_screen": "Voce esta compartilhando sua tela"
+      },
+      "no_users": {
+        "message": "Voce esta sozinho na reuniao"
+      }
+    }
+  },
+  "languages": {
+    "pt-BR": "Portugues",
+    "en": "Ingles"
+  },
+  "layout": {
+    "footer": {
+      "all_rights_reserved": "Criado por Paulo Bacelar."
+    }
+  }
+}
