@@ -47,7 +47,7 @@ export const Chat = () => {
                 {!isDownloadable && (
                   <div className="flex w-full items-center space-x-2">
                     {isFile && <PaperClipIcon className="h-5 w-5" />}
-                    <div className="flex-1">{message.message}</div>
+                    <div className="flex-1 overflow-hidden text-ellipsis">{message.message}</div>
                     {isFile && isPending && <Spinner size="sm" color="white" />}
                   </div>
                 )}

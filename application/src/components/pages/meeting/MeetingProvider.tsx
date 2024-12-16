@@ -103,8 +103,15 @@ export const MeetingProvider = ({ children }: MeetingProviderProps) => {
 
   useEffect(() => {
     const localUserName = localStorage.getItem('name');
+    const audioDevice = localStorage.getItem('audioDevice') ?? 'default';
+    const videoDevice = localStorage.getItem('videoDevice') ?? 'default';
 
     setUserName(localUserName);
+    setUserProperties((prevState) => ({
+      ...prevState,
+      audioDevice,
+      videoDevice,
+    }));
   }, []);
 
   return (

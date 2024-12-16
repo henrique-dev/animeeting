@@ -3,7 +3,7 @@ export const GithubLink = () => {
     <div>
       <a href="https://github.com/henrique-dev" className="text-white" target="_blank">
         <span className="sr-only">Github</span>
-        <svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true" className="size-6">
+        <svg fill="currentColor" viewBox="0 0 24 24" className="size-6">
           <path
             fillRule="evenodd"
             d="

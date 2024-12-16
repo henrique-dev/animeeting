@@ -33,7 +33,7 @@ export const LanguageSelect = () => {
               </>
             }
           >
-            <div>{t(`languages.${languageOption.id}`)}</div>
+            {t(`languages.${languageOption.id}`)}
           </DropdownItem>
         ))}
       </DropdownMenu>

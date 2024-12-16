@@ -3,7 +3,7 @@ export const LinkedinLink = () => {
     <div>
       <a href="https://www.linkedin.com/in/henriq-dev" className="text-white" target="_blank">
         <span className="sr-only">LinkedIn</span>
-        <svg fill="currentColor" viewBox="0 0 20 20" aria-hidden="true" className="size-5">
+        <svg fill="currentColor" viewBox="0 0 20 20" className="size-5">
           <path
             d="
           M16.338 16.338H13.67V12.16

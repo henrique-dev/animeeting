@@ -4,6 +4,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { ChatContext } from './ChatProvider';
 import { ConnectionContext } from './ConnectionProvider';
 import { MeetingContext } from './MeetingProvider';
+import { useMedia } from '../use-media';
 
 export type UserType = {
   id: string;
@@ -29,7 +30,42 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
   const { onDataChatReceived, onDataFileReceived } = useContext(ChatContext);
   const localStreamRef = useRef<MediaStream>(null);
   const [currentUsers, setCurrentUsers] = useState<UserType[]>([]);
+  const { getUserMedia } = useMedia();
   const router = useRouter();
+
+  const updateLocalStream = async (props?: {
+    video: boolean | MediaTrackConstraints | undefined;
+    audio: boolean | MediaTrackConstraints | undefined;
+  }) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const localStream = await getUserMedia(props);
+
+        userConnectionsMapRef.current.forEach((userConnection) => {
+          const senders = userConnection.peerConnection.getSenders();
+          const videoSender = senders.find((sender) => sender.track?.kind === 'video');
+          const audioSender = senders.find((sender) => sender.track?.kind === 'audio');
+
+          localStream.getTracks().forEach((track) => {
+            if (track.kind === 'video' && videoSender) {
+              videoSender.replaceTrack(track);
+            }
+            if (track.kind === 'audio' && audioSender) {
+              audioSender.replaceTrack(track);
+            }
+          });
+        });
+
+        localStreamRef.current = localStream;
+
+        resolve(localStream);
+      } catch (err) {
+        console.warn('cannot get the media');
+        console.warn(err);
+        reject();
+      }
+    });
+  };
 
   const onUserLeave = useCallback(
     (user: UserType) => {
@@ -45,13 +81,13 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
       users.forEach((user) => {
         if (user.id === userId || userConnectionsMapRef.current.has(user.id)) return;
 
-        const localeStream = localStreamRef.current;
+        const localStream = localStreamRef.current;
         const peerConnection = new RTCPeerConnection(peerConfiguration);
         const remoteStream = new MediaStream();
 
-        if (localeStream) {
-          localeStream.getTracks().forEach((track) => {
-            peerConnection.addTrack(track, localeStream);
+        if (localStream) {
+          localStream.getTracks().forEach((track) => {
+            peerConnection.addTrack(track, localStream);
           });
         }
 
@@ -241,5 +277,5 @@ export const useConnections = ({ meetingId }: UseConnectionsProps) => {
     onInvalidMeeting,
   ]);
 
-  return { currentUsers, localStreamRef, userConnectionsMapRef };
+  return { currentUsers, localStreamRef, userConnectionsMapRef, updateLocalStream };
 };

@@ -214,14 +214,14 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
 
               setMessages((oldMessages) => [
                 ...oldMessages,
-                { id: fileToReceive.name, from: '', message: fileToReceive.fileName, userId, delivered: false, kind: 'file' },
+                { id: fileToReceive.name, from: '', message: fileToReceive.fileName, userId: remoteUserId, delivered: false, kind: 'file' },
               ]);
             },
           });
           break;
       }
     },
-    [userId, createReceiverFileChannel]
+    [createReceiverFileChannel]
   );
 
   useEffect(() => {

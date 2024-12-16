@@ -1,10 +1,15 @@
 import { SocketIoContext } from '@/providers/SocketIoProvider';
-import { useCallback, useContext, useEffect, useRef } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { ConnectionContext } from './ConnectionProvider';
 import { MeetingContext } from './MeetingProvider';
 import { useAlertModal } from './use-alert-modal';
 import { useConnections } from './use-connections';
-import { useMedia } from './use-media';
+import { useMedia } from '../use-media';
+
+export type DeviceType = {
+  id: string;
+  name: string;
+};
 
 type UseMeetingProps = {
   meetingId: string;
@@ -15,11 +20,13 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
   const { userName, userProperties, meetingProperties, setUserProperties, setMeetingProperties, setUserName } = useContext(MeetingContext);
   const { sendAppData } = useContext(ConnectionContext);
   const videoElementRef = useRef<HTMLVideoElement>(null);
-  const { currentUsers, localStreamRef, userConnectionsMapRef } = useConnections({
+  const { currentUsers, localStreamRef, userConnectionsMapRef, updateLocalStream } = useConnections({
     meetingId,
   });
   const localMediaStreamRef = useRef<MediaStream>(null);
-  const { getUserMedia, getDisplayMedia } = useMedia();
+  const [videoDevices, setVideoDevices] = useState<DeviceType[]>([]);
+  const [audioDevices, setAudioDevices] = useState<DeviceType[]>([]);
+  const { getUserMedia, getDisplayMedia, getDevices } = useMedia();
   const { isModalAlertNameOpen, isModalRequireCameraNameOpen, setIsModalAlertNameOpen, setIsModalRequireCameraNameOpen } = useAlertModal();
 
   const startMeeting = useCallback(() => {
@@ -31,7 +38,13 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
     setIsModalAlertNameOpen(false);
     setUserName(userName);
 
-    getUserMedia()
+    const audioDevice = localStorage.getItem('audioDevice') ?? 'default';
+    const videoDevice = localStorage.getItem('videoDevice') ?? 'default';
+
+    getUserMedia({
+      audio: { deviceId: audioDevice },
+      video: { deviceId: videoDevice },
+    })
       .then((stream) => {
         localStreamRef.current = stream;
 
@@ -39,10 +52,45 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
       })
       .catch((err) => {
         setIsModalRequireCameraNameOpen(true);
-        console.warn('cannot start the camera');
+        console.warn('cannot start the media');
         console.warn(err);
       });
-  }, [socket, localStreamRef, userName, meetingId, getUserMedia, setUserName, setIsModalAlertNameOpen, setIsModalRequireCameraNameOpen]);
+
+    getDevices()
+      .then((devices) => {
+        const audioDevicesFound = devices
+          .filter((device) => device.kind === 'audioinput')
+          .map((device) => ({
+            id: device.deviceId,
+            name: device.label,
+          }));
+
+        const videoDevicesFound = devices
+          .filter((device) => device.kind === 'videoinput')
+          .map((device) => ({
+            id: device.deviceId,
+            name: device.label,
+          }));
+
+        setAudioDevices(audioDevicesFound);
+        setVideoDevices(videoDevicesFound);
+      })
+      .catch((err) => {
+        setIsModalRequireCameraNameOpen(true);
+        console.warn('cannot get the devices');
+        console.warn(err);
+      });
+  }, [
+    socket,
+    localStreamRef,
+    userName,
+    meetingId,
+    getUserMedia,
+    setUserName,
+    setIsModalAlertNameOpen,
+    setIsModalRequireCameraNameOpen,
+    getDevices,
+  ]);
 
   const finishMeeting = useCallback(() => {
     for (const connections of userConnectionsMapRef.current.values()) {
@@ -194,6 +242,34 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
     }
   };
 
+  const changeAudioDevice = async (deviceId: string) => {
+    updateLocalStream({
+      audio: { deviceId: { exact: deviceId } },
+      video: { deviceId: { exact: userProperties.videoDevice } },
+    })
+      .then(() => {
+        setUserProperties('audioDevice', deviceId);
+      })
+      .catch((err) => {
+        console.warn('cannot change the media');
+        console.warn(err);
+      });
+  };
+
+  const changeVideoDevice = (deviceId: string) => {
+    updateLocalStream({
+      audio: { deviceId: { exact: userProperties.audioDevice } },
+      video: { deviceId: { exact: deviceId } },
+    })
+      .then(() => {
+        setUserProperties('videoDevice', deviceId);
+      })
+      .catch((err) => {
+        console.warn('cannot change the media');
+        console.warn(err);
+      });
+  };
+
   useEffect(() => {
     startMeeting();
 
@@ -206,11 +282,15 @@ export const useMeeting = ({ meetingId }: UseMeetingProps) => {
     isModalAlertNameOpen,
     isModalRequireCameraNameOpen,
     currentUsers,
+    audioDevices,
+    videoDevices,
     localVideoElementRefHandler,
     localVideoElementMediaStreamRefHandler,
     remoteVideoElementRefHandler,
     toggleShareScreen,
     enableVideo,
     enableAudio,
+    changeAudioDevice,
+    changeVideoDevice,
   };
 };
