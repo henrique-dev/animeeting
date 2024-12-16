@@ -1,1 +1,71 @@
-{}
+{
+  "pages": {
+    "home": {
+      "home_page": {
+        "title": "A direct way to hold meetings",
+        "description": "Based on WebRTC, meetings are conducted directly between machines, allowing less delay during the conversation. Enjoy video calls, audio calls, and the exchange of messages and files.",
+        "new_meeting": "New meeting"
+      }
+    },
+    "new_meeting": {
+      "new_meeting_page": {
+        "need_to_allow_media": "You need to grant permission to access the media",
+        "name": "Name",
+        "select_audio_device": "Select the audio device",
+        "select_video_device": "Select the video device",
+        "start_meeting": "Start meeting",
+        "back": "Back"
+      }
+    },
+    "meeting": {
+      "chat": {
+        "you": "You"
+      },
+      "link_copy": {
+        "meeting_link": "Meeting link",
+        "you_can_copy": "You can copy the link below and share it with others"
+      },
+      "meeting_bar": {
+        "stop_audio": "Disable audio",
+        "start_audio": "Enable audio",
+        "stop_video": "Disable video",
+        "start_video": "Enable video",
+        "chat": "Chat",
+        "start_share_Screen": "Share screen",
+        "stop_share_screen": "Stop sharing",
+        "leave": "Leave"
+      },
+      "modal_enter_name": {
+        "enter_your_name": "Enter your name",
+        "need_name": "You need to provide a name to join the meeting",
+        "name": "Name",
+        "start_meeting": "Join meeting",
+        "exit": "Exit"
+      },
+      "modal_require_media": {
+        "cannot_access_media": "Unable to access media",
+        "need_permission": "You need to grant permission to access the media to join the meeting",
+        "exit": "Exit"
+      },
+      "notifications": {
+        "cannot_connect_to_server": "Unable to connect to the server at the moment",
+        "disconnected": "Disconnected",
+        "audio_disabled": "Your audio is disabled",
+        "video_disabled": "Your video is disabled",
+        "sharing_screen": "You are sharing your screen"
+      },
+      "no_users": {
+        "message": "You are alone in the meeting"
+      }
+    }
+  },
+  "languages": {
+    "pt-BR": "Portuguese",
+    "en": "English"
+  },
+  "layout": {
+    "footer": {
+      "all_rights_reserved": "Created by Paulo Bacelar."
+    }
+  }
+}

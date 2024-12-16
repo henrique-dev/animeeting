@@ -1,1 +1,71 @@
-{}
+{
+  "pages": {
+    "home": {
+      "home_page": {
+        "title": "Uma maneira direta de fazer reuniões",
+        "description": "Utilizando como base o WebRTC, as reuniões são feitas diretamente entre as máquinas, permitindo menos delay durante a conversa. Aproveite chamadas de vídeo, áudio e troca de mensagens e arquivos.",
+        "new_meeting": "Nova reunião"
+      }
+    },
+    "new_meeting": {
+      "new_meeting_page": {
+        "need_to_allow_media": "Você precisa fornecer permissão para acessar a mídia",
+        "name": "Nome",
+        "select_audio_device": "Selecione o dispositivo de áudio",
+        "select_video_device": "Selecione o dispositivo de vídeo",
+        "start_meeting": "Iniciar reunião",
+        "back": "Voltar"
+      }
+    },
+    "meeting": {
+      "chat": {
+        "you": "Você"
+      },
+      "link_copy": {
+        "meeting_link": "Link da reunião",
+        "you_can_copy": "Você pode copiar o link abaixo e compartilhar com outros"
+      },
+      "meeting_bar": {
+        "stop_audio": "Desativar áudio",
+        "start_audio": "Ativar áudio",
+        "stop_video": "Desativar vídeo",
+        "start_video": "Ativar vídeo",
+        "chat": "Conversa",
+        "start_share_Screen": "Compartilhar tela",
+        "stop_share_screen": "Parar de compartilhar",
+        "leave": "Sair"
+      },
+      "modal_enter_name": {
+        "enter_your_name": "Insira um nome",
+        "need_name": "Você precisa fornecer um nome para entrar na reunião",
+        "name": "Nome",
+        "start_meeting": "Entrar na reunião",
+        "exit": "Sair"
+      },
+      "modal_require_media": {
+        "cannot_access_media": "Não foi possível acessar a mídia",
+        "need_permission": "Você precisa fornecer permissão para acessar a mídia para poder entrar na reunião",
+        "exit": "Sair"
+      },
+      "notifications": {
+        "cannot_connect_to_server": "Não foi possível se conectar ao servidor no momento",
+        "disconnected": "Desconectado",
+        "audio_disabled": "Seu áudio está desabilitado",
+        "video_disabled": "Seu vídeo está desabilitado",
+        "sharing_screen": "Você está compartilhando sua tela"
+      },
+      "no_users": {
+        "message": "Você está sozinho na reunião"
+      }
+    }
+  },
+  "languages": {
+    "pt-BR": "Português",
+    "en": "Inglês"
+  },
+  "layout": {
+    "footer": {
+      "all_rights_reserved": "Criado por Paulo Bacelar."
+    }
+  }
+}
