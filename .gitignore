@@ -11,6 +11,7 @@ application/coverage
 # next.js
 application/.next/
 application/out/
+application/dist
 
 # production
 application/build
