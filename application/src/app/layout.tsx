@@ -1,5 +1,4 @@
 import { DefaultProvider } from '@/providers/DefaultProvider';
-import ThemeProvider from '@/providers/ThemeProvider';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTimeZone } from 'next-intl/server';
@@ -33,15 +32,13 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const messages = await getMessages();
 
   return (
-    <ThemeProvider>
-      <CustomDocument locale={locale}>
-        <body className={twJoin(geistSans.variable, geistMono.variable, 'h-full antialiased')}>
-          <NextIntlClientProvider timeZone={timezone} locale={locale} messages={messages}>
-            <DefaultProvider>{children}</DefaultProvider>
-          </NextIntlClientProvider>
-        </body>
-      </CustomDocument>
-    </ThemeProvider>
+    <CustomDocument locale={locale}>
+      <body className={twJoin(geistSans.variable, geistMono.variable, 'h-full antialiased')}>
+        <NextIntlClientProvider timeZone={timezone} locale={locale} messages={messages}>
+          <DefaultProvider>{children}</DefaultProvider>
+        </NextIntlClientProvider>
+      </body>
+    </CustomDocument>
   );
 };
 
