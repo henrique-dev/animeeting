@@ -1,7 +1,7 @@
 import { twJoin } from 'tailwind-merge';
 import { Chat } from './Chat';
 import { LinkCopy } from './LinkCopy';
-import { MeetingBar } from './MeetingBar';
+import { MeetingBar } from './appbar/MeetingBar';
 import { ModalEnterName } from './ModalEnterName';
 import { ModalRequireMedia } from './ModalRequireMedia';
 import { Notifications } from './Notifications';
@@ -9,28 +9,8 @@ import { NoUsers } from './NoUsers';
 import { useMeeting } from './use-meeting';
 import { UsersVideoShow } from './UsersVideoShow';
 
-type MeetingProps = {
-  meetingId: string;
-};
-
-export const Meeting = ({ meetingId }: MeetingProps) => {
-  const {
-    currentUsers,
-    isModalAlertNameOpen,
-    isModalRequireCameraNameOpen,
-    audioDevices,
-    videoDevices,
-    localVideoElementRefHandler,
-    localVideoElementMediaStreamRefHandler,
-    remoteVideoElementRefHandler,
-    toggleShareScreen,
-    enableVideo,
-    enableAudio,
-    changeAudioDevice,
-    changeVideoDevice,
-  } = useMeeting({
-    meetingId,
-  });
+export const Meeting = () => {
+  const { isModalAlertNameOpen, isModalRequireCameraNameOpen } = useMeeting();
 
   return (
     <div className="flex h-full w-full flex-col bg-zinc-800">
@@ -41,13 +21,8 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
             'bg-gradient-to-t from-zinc-900 to-zinc-800 to-10%'
           )}
         >
-          {currentUsers.length === 0 && <NoUsers />}
-          <UsersVideoShow
-            users={currentUsers}
-            localVideoElementRefHandler={localVideoElementRefHandler}
-            localVideoElementMediaStreamRefHandler={localVideoElementMediaStreamRefHandler}
-            remoteVideoElementRefHandler={remoteVideoElementRefHandler}
-          />
+          <NoUsers />
+          <UsersVideoShow />
           <Notifications />
         </div>
         <Chat />
@@ -55,15 +30,7 @@ export const Meeting = ({ meetingId }: MeetingProps) => {
       <LinkCopy />
       <ModalEnterName isOpen={isModalAlertNameOpen} />
       <ModalRequireMedia isOpen={isModalRequireCameraNameOpen} />
-      <MeetingBar
-        audioDevices={audioDevices}
-        videoDevices={videoDevices}
-        toggleShareScreen={toggleShareScreen}
-        enableVideo={enableVideo}
-        enableAudio={enableAudio}
-        changeAudioDevice={changeAudioDevice}
-        changeVideoDevice={changeVideoDevice}
-      />
+      <MeetingBar />
     </div>
   );
 };

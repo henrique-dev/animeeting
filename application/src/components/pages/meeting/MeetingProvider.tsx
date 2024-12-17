@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { ConnectionContext } from './ConnectionProvider';
 
 type UserPropertiesType = {
   video: boolean;
@@ -18,7 +19,6 @@ type MeetingContextProps = {
   meetingProperties: MeetingPropertiesType;
   setUserName: React.Dispatch<React.SetStateAction<string | null>>;
   setUserProperties: (key: keyof UserPropertiesType, value: string | boolean) => void;
-  onDataAppReceived: (userId: string, event: MessageEvent) => void;
   setMeetingProperties: (key: keyof MeetingPropertiesType, value: string | boolean | undefined) => void;
 };
 
@@ -37,7 +37,6 @@ export const MeetingContext = React.createContext<MeetingContextProps>({
   setUserName: () => undefined,
   setUserProperties: () => undefined,
   setMeetingProperties: () => undefined,
-  onDataAppReceived: () => undefined,
 });
 
 type MeetingProviderProps = {
@@ -45,6 +44,7 @@ type MeetingProviderProps = {
 };
 
 export const MeetingProvider = ({ children }: MeetingProviderProps) => {
+  const { appSubscribe } = useContext(ConnectionContext);
   const [userName, setUserName] = useState<string | null>(null);
   const [userProperties, setUserProperties] = useState<UserPropertiesType>({
     video: true,
@@ -78,16 +78,16 @@ export const MeetingProvider = ({ children }: MeetingProviderProps) => {
   );
 
   const onDataAppReceived = useCallback(
-    (userId: string, event: MessageEvent) => {
-      const params = JSON.parse(event.data);
+    (data: { userId: string; payload: string }) => {
+      const params = JSON.parse(data.payload);
 
       switch (params.code) {
         case 'start_sharing_screen':
-          changeMeetingPropertiesHandler('userInFocusId', userId);
+          changeMeetingPropertiesHandler('userInFocusId', data.userId);
           break;
         case 'stop_sharing_screen':
           setMeetingProperties((oldState) => {
-            if (oldState.userInFocusId === userId) {
+            if (oldState.userInFocusId === data.userId) {
               return {
                 ...oldState,
                 userInFocusId: undefined,
@@ -114,6 +114,8 @@ export const MeetingProvider = ({ children }: MeetingProviderProps) => {
     }));
   }, []);
 
+  useEffect(() => appSubscribe(onDataAppReceived), [appSubscribe, onDataAppReceived]);
+
   return (
     <MeetingContext.Provider
       value={{
@@ -122,7 +124,6 @@ export const MeetingProvider = ({ children }: MeetingProviderProps) => {
         meetingProperties,
         setUserName,
         setUserProperties: changeUserPropertiesHandler,
-        onDataAppReceived,
         setMeetingProperties: changeMeetingPropertiesHandler,
       }}
     >

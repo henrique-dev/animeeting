@@ -25,8 +25,6 @@ type ChatContextProps = {
   haveUnreadMessages: boolean;
   setIsChatVisible: React.Dispatch<React.SetStateAction<boolean>>;
   setMessages: React.Dispatch<React.SetStateAction<MessageType[]>>;
-  onDataChatReceived: (userId: string, event: MessageEvent) => void;
-  onDataFileReceived: (userId: string, event: MessageEvent) => void;
   sendMessage: (message: MessageType) => void;
   sendFile: (file: File) => void;
 };
@@ -37,8 +35,6 @@ export const ChatContext = React.createContext<ChatContextProps>({
   haveUnreadMessages: false,
   setIsChatVisible: () => undefined,
   setMessages: () => undefined,
-  onDataChatReceived: () => undefined,
-  onDataFileReceived: () => undefined,
   sendMessage: () => undefined,
   sendFile: () => undefined,
 });
@@ -62,7 +58,8 @@ type ChatProviderProps = {
 
 export const ChatProvider = ({ children }: ChatProviderProps) => {
   const { userId } = useContext(SocketIoContext);
-  const { sendChatData, sendFileData, createReceiverFileChannel, createSenderFileChannel } = useContext(ConnectionContext);
+  const { chatSubscribe, fileSubscribe, sendChatData, sendFileData, createReceiverFileChannel, createSenderFileChannel } =
+    useContext(ConnectionContext);
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [haveUnreadMessages, setHaveUnreadMessages] = useState(false);
@@ -152,12 +149,12 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
   );
 
   const onDataChatReceived = useCallback(
-    (remoteUserId: string, event: MessageEvent) => {
-      const { from, message } = JSON.parse(event.data);
+    (data: { userId: string; payload: string }) => {
+      const { from, message } = JSON.parse(data.payload);
 
       setMessages((oldMessages) => [
         ...oldMessages,
-        { id: crypto.randomUUID(), from, message, userId: remoteUserId, delivered: true, kind: 'text' },
+        { id: crypto.randomUUID(), from, message, userId: data.userId, delivered: true, kind: 'text' },
       ]);
 
       setHaveUnreadMessages(true);
@@ -166,14 +163,14 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
   );
 
   const onDataFileReceived = useCallback(
-    (remoteUserId: string, event: MessageEvent) => {
-      const params: FileDataType = JSON.parse(event.data);
+    (data: { userId: string; payload: string }) => {
+      const params: FileDataType = JSON.parse(data.payload);
 
       receivedFilesRef.current.set(params.name, params);
 
       switch (params.code) {
         case 'create_file_channel':
-          createReceiverFileChannel(remoteUserId, params.name, {
+          createReceiverFileChannel(data.userId, params.name, {
             onOpen: (channel) => {
               const fileToReceive = receivedFilesRef.current.get(params.name);
 
@@ -214,7 +211,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
 
               setMessages((oldMessages) => [
                 ...oldMessages,
-                { id: fileToReceive.name, from: '', message: fileToReceive.fileName, userId: remoteUserId, delivered: false, kind: 'file' },
+                { id: fileToReceive.name, from: '', message: fileToReceive.fileName, userId: data.userId, delivered: false, kind: 'file' },
               ]);
             },
           });
@@ -230,6 +227,9 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
     }
   }, [isChatVisible, haveUnreadMessages, setHaveUnreadMessages]);
 
+  useEffect(() => chatSubscribe(onDataChatReceived), [chatSubscribe, onDataChatReceived]);
+  useEffect(() => fileSubscribe(onDataFileReceived), [fileSubscribe, onDataFileReceived]);
+
   return (
     <ChatContext.Provider
       value={{
@@ -238,8 +238,6 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
         haveUnreadMessages,
         setIsChatVisible,
         setMessages,
-        onDataChatReceived,
-        onDataFileReceived,
         sendMessage,
         sendFile,
       }}

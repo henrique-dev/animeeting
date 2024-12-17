@@ -42,7 +42,7 @@ export const useMedia = () => {
   }, []);
 
   const retrieveMediaDevices = useCallback(
-    (setDefaultDevices?: boolean) => {
+    (setDefaultDevices?: boolean): Promise<[DeviceType[], DeviceType[]]> => {
       return new Promise(async (resolve, reject) => {
         try {
           const devices = await getDevices();
