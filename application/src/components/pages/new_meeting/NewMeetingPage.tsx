@@ -4,6 +4,7 @@ import { SocketIoContext } from '@/providers/SocketIoProvider';
 import { Alert, Button, Chip, Input, Select, SelectItem, Spinner } from '@nextui-org/react';
 import { useRouter } from 'next/navigation';
 import { useContext } from 'react';
+import { twJoin } from 'tailwind-merge';
 import { useTranslations } from 'use-intl';
 import { useNewMeeting } from './use-new-meeting';
 
@@ -31,7 +32,12 @@ export const NewMeetingPage = () => {
   const disableSubmit = name.trim() === '' || !mediaAllowed || !isConnected || isSubmitting || !configuredMedia;
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center space-y-4 rounded-lg bg-zinc-900 p-2 sm:h-min sm:max-w-96">
+    <div
+      className={twJoin(
+        'flex h-full w-full flex-col items-center justify-center',
+        'z-10 space-y-4 rounded-lg bg-zinc-900 p-2 sm:h-min sm:max-w-96'
+      )}
+    >
       <h1 className="text-3xl text-white">AniMeet</h1>
       {mediaAllowed === null && (
         <div className="flex h-64 w-full items-center justify-center rounded-lg bg-zinc-800">
