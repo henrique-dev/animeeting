@@ -8,6 +8,8 @@ type MediaContextProps = {
   disableShareScreen: boolean;
   audioDevices: DeviceType[];
   videoDevices: DeviceType[];
+  selectedAudioDevice: string;
+  selectedVideoDevice: string;
   getDisplayMedia: () => Promise<MediaStream>;
   retrieveMediaDevices: (setDefaultDevices?: boolean) => Promise<unknown>;
   getUserMedia: (props?: {
@@ -16,6 +18,8 @@ type MediaContextProps = {
   }) => Promise<MediaStream>;
   closeAllLocalStreams: () => void;
   closeLocalScreenStream: () => void;
+  setSelectedAudioDevice: React.Dispatch<React.SetStateAction<string>>;
+  setSelectedVideoDevice: React.Dispatch<React.SetStateAction<string>>;
 };
 
 export const MediaContext = React.createContext<MediaContextProps>({
@@ -25,11 +29,15 @@ export const MediaContext = React.createContext<MediaContextProps>({
   disableShareScreen: false,
   audioDevices: [],
   videoDevices: [],
+  selectedAudioDevice: '',
+  selectedVideoDevice: '',
   getUserMedia: () => new Promise<MediaStream>(() => undefined),
   getDisplayMedia: () => new Promise<MediaStream>(() => undefined),
   retrieveMediaDevices: () => new Promise<MediaStream>(() => undefined),
   closeAllLocalStreams: () => undefined,
   closeLocalScreenStream: () => undefined,
+  setSelectedAudioDevice: () => undefined,
+  setSelectedVideoDevice: () => undefined,
 });
 
 type MediaProviderProps = {
@@ -40,7 +48,18 @@ export const MediaProvider = ({ children }: MediaProviderProps) => {
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream>(null);
   const localScreenStreamRef = useRef<MediaStream>(null);
-  const { disableShareScreen, audioDevices, videoDevices, getDisplayMedia, retrieveMediaDevices, getUserMedia } = useMedia();
+  const {
+    disableShareScreen,
+    audioDevices,
+    videoDevices,
+    selectedAudioDevice,
+    selectedVideoDevice,
+    getDisplayMedia,
+    retrieveMediaDevices,
+    getUserMedia,
+    setSelectedAudioDevice,
+    setSelectedVideoDevice,
+  } = useMedia();
 
   const closeLocalScreenStream = useCallback(() => {
     localScreenStreamRef.current?.getTracks().forEach((track) => {
@@ -77,11 +96,15 @@ export const MediaProvider = ({ children }: MediaProviderProps) => {
         disableShareScreen,
         audioDevices,
         videoDevices,
+        selectedAudioDevice,
+        selectedVideoDevice,
         getUserMedia,
         getDisplayMedia,
         retrieveMediaDevices,
         closeAllLocalStreams,
         closeLocalScreenStream,
+        setSelectedAudioDevice,
+        setSelectedVideoDevice,
       }}
     >
       {children}

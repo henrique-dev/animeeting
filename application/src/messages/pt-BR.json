@@ -36,9 +36,10 @@
         "leave": "Sair"
       },
       "modal_enter_name": {
-        "enter_your_name": "Insira um nome",
-        "need_name": "Você precisa fornecer um nome para entrar na reunião",
         "name": "Nome",
+        "need_to_allow_media": "Você precisa fornecer permissão para acessar a mídia",
+        "select_audio_device": "Selecione o dispositivo de áudio",
+        "select_video_device": "Selecione o dispositivo de vídeo",
         "start_meeting": "Entrar na reunião",
         "exit": "Sair"
       },

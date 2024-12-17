@@ -9,11 +9,11 @@
     },
     "new_meeting": {
       "new_meeting_page": {
-        "need_to_allow_media": "You need to grant permission to access the media",
+        "need_to_allow_media": "You need to grant permission to access media",
         "name": "Name",
-        "select_audio_device": "Select the audio device",
-        "select_video_device": "Select the video device",
-        "start_meeting": "Start meeting",
+        "select_audio_device": "Select audio device",
+        "select_video_device": "Select video device",
+        "start_meeting": "Start Meeting",
         "back": "Back"
       }
     },
@@ -22,29 +22,30 @@
         "you": "You"
       },
       "link_copy": {
-        "meeting_link": "Meeting link",
+        "meeting_link": "Meeting Link",
         "you_can_copy": "You can copy the link below and share it with others"
       },
       "meeting_bar": {
-        "stop_audio": "Disable audio",
-        "start_audio": "Enable audio",
-        "stop_video": "Disable video",
-        "start_video": "Enable video",
+        "stop_audio": "Disable Audio",
+        "start_audio": "Enable Audio",
+        "stop_video": "Disable Video",
+        "start_video": "Enable Video",
         "chat": "Chat",
-        "start_share_Screen": "Share screen",
-        "stop_share_screen": "Stop sharing",
+        "start_share_Screen": "Share Screen",
+        "stop_share_screen": "Stop Sharing",
         "leave": "Leave"
       },
       "modal_enter_name": {
-        "enter_your_name": "Enter your name",
-        "need_name": "You need to provide a name to join the meeting",
         "name": "Name",
-        "start_meeting": "Join meeting",
+        "need_to_allow_media": "You need to grant permission to access media",
+        "select_audio_device": "Select audio device",
+        "select_video_device": "Select video device",
+        "start_meeting": "Join Meeting",
         "exit": "Exit"
       },
       "modal_require_media": {
         "cannot_access_media": "Unable to access media",
-        "need_permission": "You need to grant permission to access the media to join the meeting",
+        "need_permission": "You need to grant permission to access media to join the meeting",
         "exit": "Exit"
       },
       "notifications": {
@@ -65,7 +66,7 @@
   },
   "layout": {
     "footer": {
-      "all_rights_reserved": "Created by Paulo Bacelar."
+      "all_rights_reserved": "Created by Paulo Bacelar"
     }
   }
 }

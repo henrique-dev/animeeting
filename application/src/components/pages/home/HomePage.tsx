@@ -10,8 +10,8 @@ export const HomePage = () => {
   const t = useTranslations();
 
   return (
-    <div className="mx-0 lg:container lg:mx-auto">
-      <div className="flex flex-1 items-center">
+    <div className="flex h-full w-full overflow-hidden 2xl:overflow-auto">
+      <div className="mx-0 2xl:container 2xl:mx-auto flex flex-1 items-center w-full 2xl:w-auto">
         <div className="flex-1 space-y-8 px-10 sm:min-w-[36rem]">
           <h1 className="text-center text-4xl sm:text-left md:text-8xl">AniMeet</h1>
           <h2 className="text-center text-3xl sm:text-left sm:text-7xl">{t('pages.home.home_page.title')}</h2>

@@ -1,12 +1,12 @@
 'use client';
 
-import { SocketIoContext } from '@/providers/SocketIoProvider';
-import { useRouter } from 'next/navigation';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { useMedia } from '../use-media';
+import { MediaContext } from './MediaProvider';
+import { MeetingContext } from './MeetingProvider';
 
-export const useNewMeeting = () => {
-  const { socket } = useContext(SocketIoContext);
+export const useUpdateMeetingProperties = () => {
+  const { setUserName } = useContext(MeetingContext);
+  const mediaStreamRef = useRef<MediaStream>(null);
   const {
     audioDevices,
     videoDevices,
@@ -14,28 +14,12 @@ export const useNewMeeting = () => {
     selectedVideoDevice,
     setSelectedAudioDevice,
     setSelectedVideoDevice,
-    retrieveMediaDevices,
     getUserMedia,
-  } = useMedia();
+    retrieveMediaDevices,
+  } = useContext(MediaContext);
   const videoElementRef = useRef<HTMLVideoElement>(null);
-  const mediaStreamRef = useRef<MediaStream>(null);
   const [mediaAllowed, setMediaAllowed] = useState<boolean | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState('');
-  const router = useRouter();
-
-  const createNewMeetingHandler = () => {
-    sessionStorage.setItem('name', name);
-    sessionStorage.setItem('audioDevice', selectedAudioDevice);
-    sessionStorage.setItem('videoDevice', selectedVideoDevice);
-
-    socket?.on('meeting-created', ({ id }) => {
-      router.push(`/meetings/${id}`);
-    });
-
-    socket?.emit('create-meeting');
-    setIsSubmitting(true);
-  };
 
   const registerVideoRef = (videoElement: HTMLVideoElement | null) => {
     if (videoElement) {
@@ -54,7 +38,6 @@ export const useNewMeeting = () => {
     })
       .then((stream) => {
         mediaStreamRef.current = stream;
-        setMediaAllowed(true);
         setSelectedAudioDevice(event.target.value);
       })
       .catch((err) => {
@@ -70,13 +53,19 @@ export const useNewMeeting = () => {
     })
       .then((stream) => {
         mediaStreamRef.current = stream;
-        setMediaAllowed(true);
         setSelectedVideoDevice(event.target.value);
       })
       .catch((err) => {
         console.warn('cannot get the user media');
         console.warn(err);
       });
+  };
+
+  const submitHandler = () => {
+    sessionStorage.setItem('name', name);
+    sessionStorage.setItem('audioDevice', selectedAudioDevice);
+    sessionStorage.setItem('videoDevice', selectedVideoDevice);
+    setUserName(name);
   };
 
   useEffect(() => {
@@ -87,7 +76,8 @@ export const useNewMeeting = () => {
       .then((stream) => {
         mediaStreamRef.current = stream;
         setMediaAllowed(true);
-        setName(localStorage.getItem('name') ?? '');
+
+        setName(sessionStorage.getItem('name') ?? '');
 
         retrieveMediaDevices(true).catch((err) => {
           setMediaAllowed(false);
@@ -121,17 +111,16 @@ export const useNewMeeting = () => {
   }, [setMediaAllowed, getUserMedia, retrieveMediaDevices]);
 
   return {
-    isSubmitting,
-    mediaAllowed,
-    name,
     audioDevices,
     videoDevices,
     selectedAudioDevice,
     selectedVideoDevice,
+    name,
+    mediaAllowed,
     setSelectedAudioDevice: selectedAudioDeviceHandler,
     setSelectedVideoDevice: selectedVideoDeviceHandler,
-    setName,
-    createNewMeetingHandler,
     registerVideoRef,
+    setName,
+    submitHandler,
   };
 };

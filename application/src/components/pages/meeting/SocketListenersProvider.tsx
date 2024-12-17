@@ -29,6 +29,7 @@ export const SocketListenersProvider = ({ children }: SocketListenersProviderPro
   const onUserEnter = useCallback(
     ({ users }: { users: UserType[] }) => {
       users.forEach((user) => {
+        if (userId === '') return;
         if (user.id === userId) return;
 
         const peerConnection = createConnection(user.id);

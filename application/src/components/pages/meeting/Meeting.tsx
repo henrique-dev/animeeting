@@ -1,17 +1,14 @@
 import { twJoin } from 'tailwind-merge';
+import { MeetingBar } from './appbar/MeetingBar';
 import { Chat } from './Chat';
 import { LinkCopy } from './LinkCopy';
-import { MeetingBar } from './appbar/MeetingBar';
-import { ModalEnterName } from './ModalEnterName';
+import { ModalConfigureMeeting } from './ModalConfigureMeeting';
 import { ModalRequireMedia } from './ModalRequireMedia';
 import { Notifications } from './Notifications';
 import { NoUsers } from './NoUsers';
-import { useMeeting } from './use-meeting';
 import { UsersVideoShow } from './UsersVideoShow';
 
 export const Meeting = () => {
-  const { isModalAlertNameOpen, isModalRequireCameraNameOpen } = useMeeting();
-
   return (
     <div className="flex h-full w-full flex-col bg-zinc-800">
       <div className="relative flex flex-1 overflow-hidden">
@@ -28,8 +25,8 @@ export const Meeting = () => {
         <Chat />
       </div>
       <LinkCopy />
-      <ModalEnterName isOpen={isModalAlertNameOpen} />
-      <ModalRequireMedia isOpen={isModalRequireCameraNameOpen} />
+      <ModalConfigureMeeting />
+      <ModalRequireMedia />
       <MeetingBar />
     </div>
   );

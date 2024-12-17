@@ -1,18 +1,17 @@
 import { Button, Modal, ModalBody, ModalContent, ModalHeader } from '@nextui-org/react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useContext } from 'react';
+import { MeetingContext } from './MeetingProvider';
 
-type ModalRequireMediaProps = {
-  isOpen: boolean;
-};
-
-export const ModalRequireMedia = ({ isOpen }: ModalRequireMediaProps) => {
+export const ModalRequireMedia = () => {
+  const { isModalRequireMediaOpen } = useContext(MeetingContext);
   const router = useRouter();
   const t = useTranslations();
 
   return (
     <>
-      <Modal isOpen={isOpen} hideCloseButton>
+      <Modal isOpen={isModalRequireMediaOpen} hideCloseButton>
         <ModalContent>
           {() => (
             <>
