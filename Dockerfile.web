@@ -1,7 +1,7 @@
 # Dockerfile development version
 FROM node:20.3.1-alpine AS animeeting
 
-RUN apk -U upgrade && apk add --no-cache curl git
+RUN apk -U upgrade && apk add --no-cache curl git bash
 
 WORKDIR /opt/app
 
@@ -12,5 +12,9 @@ RUN rm -rf node_modules && \
     npm i
 
 COPY application .
+
+COPY entrypoint.sh /usr/bin/entrypoint.sh
+RUN chmod +x /usr/bin/entrypoint.sh
+ENTRYPOINT ["/usr/bin/entrypoint.sh"]
 
 CMD ["npm", "run", "dev"]

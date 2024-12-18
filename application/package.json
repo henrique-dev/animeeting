@@ -7,7 +7,8 @@
     "build": "next build && tsc --project tsconfig.server.json",
     "start": "cross-env NODE_ENV=production node dist/server.js",
     "lint": "next lint",
-    "messages": "node messages.js"
+    "ca": "mkcert create-ca --key certificates/ca.key --cert certificates/ca.crt && npm run cert",
+    "cert" : "mkcert create-cert --ca-key certificates/ca.key --ca-cert certificates/ca.crt --key certificates/cert.key --cert certificates/cert.crt"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -30,6 +31,7 @@
     "@types/react-dom": "^19.0.2",
     "eslint": "^9.17.0",
     "eslint-config-next": "15.1.1",
+    "mkcert": "^3.2.0",
     "nodemon": "^3.1.9",
     "postcss": "^8.4.49",
     "prettier-plugin-tailwindcss": "^0.6.9",
