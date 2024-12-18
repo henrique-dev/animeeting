@@ -8,22 +8,21 @@ import { createUser, deleteUser, getUser } from './server/users';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
-const port = 3000;
+const port = Number(process.env.PORT ?? 3000);
 
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
-const key = fs.readFileSync('certificates/cert.key');
-const cert = fs.readFileSync('certificates/cert.crt');
+let key = undefined;
+let cert = undefined;
+
+if (dev) {
+  key = fs.readFileSync('certificates/cert.key');
+  cert = fs.readFileSync('certificates/cert.crt');
+}
 
 app.prepare().then(async () => {
-  const httpServer = createServer(
-    {
-      key,
-      cert,
-    },
-    handler
-  );
+  const httpServer = createServer({ key, cert }, handler);
 
   const io = new Server(httpServer, {});
 

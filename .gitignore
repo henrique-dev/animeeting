@@ -37,3 +37,4 @@ application/certificates
 
 # envs
 .env
+application/.env.local

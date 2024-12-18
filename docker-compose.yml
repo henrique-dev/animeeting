@@ -12,6 +12,8 @@ services:
       - /opt/app/node_modules/
     ports:
       - '$PORT:3000'
+    networks:
+      - animeeting-network
     env_file:
       - .env
     environment:
@@ -21,4 +23,26 @@ services:
       interval: 5s
       retries: 10
       start_period: 30s
-      timeout: 10s    
+      timeout: 10s
+  redis:
+    container_name: redis
+    image: redis:7.2.4
+    restart: always
+    networks:
+      - animeeting-network
+    volumes:
+      - redis_data_container:/var/lib/redis/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+
+networks:
+  animeeting-network:
+    name: animeeting-network
+    driver: bridge
+
+volumes:
+  redis_data_container:
