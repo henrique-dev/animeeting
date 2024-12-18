@@ -1,6 +1,7 @@
 import fs from 'fs';
+import http from 'http';
+import https from 'https';
 import next from 'next';
-import { createServer } from 'node:https';
 import { Server } from 'socket.io';
 import { getConnectionPair, setConnectionPair } from './server/connection-pairs';
 import { addUserToMeeting, createMeeting, getMeeting, removeUserFromMeeting } from './server/meetings';
@@ -13,16 +14,19 @@ const port = Number(process.env.PORT ?? 3000);
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
-let key = undefined;
-let cert = undefined;
+const createServer = () => {
+  if (dev) {
+    const key = fs.readFileSync('certificates/cert.key');
+    const cert = fs.readFileSync('certificates/cert.crt');
 
-if (dev) {
-  key = fs.readFileSync('certificates/cert.key');
-  cert = fs.readFileSync('certificates/cert.crt');
-}
+    return https.createServer({ key, cert }, handler);
+  } else {
+    return http.createServer(handler);
+  }
+};
 
 app.prepare().then(async () => {
-  const httpServer = createServer({ key, cert }, handler);
+  const httpServer = createServer();
 
   const io = new Server(httpServer, {});
 
@@ -234,6 +238,10 @@ app.prepare().then(async () => {
       process.exit(1);
     })
     .listen(port, () => {
-      console.log(`> Ready on https://${hostname}:${port}`);
+      if (dev) {
+        console.log(`> Ready on https://${hostname}:${port}`);
+      } else {
+        console.log(`> Ready on http://${hostname}:${port}`);
+      }
     });
 });
