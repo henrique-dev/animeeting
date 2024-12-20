@@ -109,7 +109,6 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
         onOpen: (channel) => {
           channel.onmessage = (event) => {
             if (event.data === 'ready_to_receive') {
-              // sending the file
               fileReader.onload = (progressEvent) => {
                 const result = progressEvent.target?.result;
 
@@ -121,7 +120,10 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
                   }
                 }
 
-                sendChunk();
+                const timer = setTimeout(() => {
+                  sendChunk();
+                  clearTimeout(timer);
+                }, 20);
               };
             }
             if (event.data === 'close_channel') {

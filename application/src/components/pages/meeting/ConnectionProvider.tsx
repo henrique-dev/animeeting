@@ -129,7 +129,7 @@ export const ConnectionProvider = ({ children }: ConnectionProviderProps) => {
 
       if (!userConnection) return;
 
-      const fileTransferChannel = userConnection.peerConnection.createDataChannel(name);
+      const fileTransferChannel = userConnection.peerConnection.createDataChannel(name, { ordered: true });
 
       fileTransferChannel.onopen = () => {
         onOpen(fileTransferChannel);
